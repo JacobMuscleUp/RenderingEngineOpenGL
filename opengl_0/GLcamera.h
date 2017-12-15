@@ -1,0 +1,166 @@
+#ifndef CCKIT_GLCAMERA_H
+#define CCKIT_GLCAMERA_H
+
+#include <glad/glad.h>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "GLshader.h"
+#include "utils.h"
+#include "GLobj.h"
+
+namespace cckit
+{
+	class GLcamera
+	{
+	public:
+		enum class movement {
+			forward, backward, left, right, count
+		};
+		static const float YAW
+			, PITCH
+			, MOVE_SPEED
+			, ROTATE_SPEED
+			, ZOOM_SPEED;
+	public:
+		GLcamera(const glm::vec3& _pos, const glm::vec3& _worldUp, float _yaw = YAW, float _pitch = PITCH
+			, float _moveSpeed = MOVE_SPEED, float _rotateSpeed = ROTATE_SPEED, float _zoomSpeed = ZOOM_SPEED)
+			: mPos(_pos), mWorldUp(_worldUp), mForward(glm::vec3(0, 0, -1)), mYaw(_yaw), mPitch(_pitch)
+			, mMoveSpeed(_moveSpeed), mRotateSpeed(_rotateSpeed), mZoomSpeed(_zoomSpeed)
+			, mpShader(nullptr), mProjectionMat() {
+			UpdateCoordAxes();
+		}
+
+		glm::mat4 get_view_matrix() const {
+			return glm::lookAt(mPos, mPos + mForward, mUp);
+		}
+
+		void process_keyboard(movement _movement, float _deltaTime) {
+			float moveSpeed = mMoveSpeed * _deltaTime;
+			if (_movement == movement::backward)
+				mPos -= mForward * moveSpeed;
+			else if (_movement == movement::forward)
+				mPos += mForward * moveSpeed;
+			else if (_movement == movement::left)
+				mPos -= mRight * moveSpeed;
+			else if (_movement == movement::right)
+				mPos += mRight * moveSpeed;
+		}
+
+		void process_mouse(float _offsetX, float _offsetY) {
+			mYaw += _offsetX * mRotateSpeed;
+			mPitch += _offsetY * mRotateSpeed;
+			mPitch = max(-89.0f, min(mPitch, 89.0f));
+			UpdateCoordAxes();
+		}
+
+		void set_shader(const GLshader& _shader);
+		void set_shader_coord_axes(const GLshader& _shader);
+		void set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far);
+
+		void render(const GLobj& _obj, GLenum _renderMode = GL_FILL) const;
+
+		const glm::vec3& pos() const { return mPos; }
+		const glm::vec3& forward() const { return mForward; }
+		const glm::vec3& right() const { return mRight; }
+		const glm::vec3& up() const { return mUp; }
+	private:
+		void UpdateCoordAxes() {
+			glm::vec3 forward(
+				cos(glm::radians(mYaw)) * cos(glm::radians(mPitch))
+				, sin(glm::radians(mPitch))
+				, sin(glm::radians(mYaw)) * cos(glm::radians(mPitch))
+			);
+			mForward = glm::normalize(forward);
+			mRight = glm::normalize(glm::cross(mForward, mWorldUp));
+			mUp = glm::normalize(glm::cross(mRight, mForward));
+		}
+	private:
+		glm::vec3 mPos, mForward, mRight, mUp, mWorldUp;
+		float mYaw, mPitch;
+		float mMoveSpeed, mRotateSpeed, mZoomSpeed;
+
+		const GLshader* mpShader;
+		const GLshader* mpShaderCoordAxes;
+		glm::mat4 mProjectionMat;
+	};
+	const float GLcamera::YAW = 0.0f;
+	const float GLcamera::PITCH = 0.0f;
+	const float GLcamera::MOVE_SPEED = 1.0f;
+	const float GLcamera::ROTATE_SPEED = 1.0f;
+	const float GLcamera::ZOOM_SPEED = 1.0f;
+
+	void GLcamera::set_shader(const GLshader& _shader) {
+		mpShader = &_shader;
+	}
+
+	void GLcamera::set_shader_coord_axes(const GLshader& _shader) {
+		mpShaderCoordAxes = &_shader;
+	}
+
+	void GLcamera::set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far) {
+		mProjectionMat = glm::perspective(glm::radians(_fov), _aspect, _near, _far);
+	}
+
+	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
+		_obj.setup_render_config();
+
+		const glm::mat4& modelMat = _obj.model_mat();
+		glm::mat4 normalModelMat = glm::transpose(glm::inverse(modelMat));
+
+		mpShader->use();
+		mpShader->setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));
+		mpShader->setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
+		mpShader->setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+		mpShader->setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
+
+		mpShader->mShaderConfig(*mpShader);
+
+		glPolygonMode(GL_FRONT_AND_BACK, _renderMode);
+		_obj.model_ptr()->draw(*mpShader);
+
+		if (_obj.mbCoordAxesDrawn) {
+			glm::vec3 vertices3D[] = { 
+				_obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mForward, _obj.mPosition
+				, _obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mRight, _obj.mPosition
+				, _obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mUp, _obj.mPosition
+			};
+			for (int i = length(vertices3D) - 1; i >= 0; --i) {
+				_obj.mCoordAxes1D[6 * i] = vertices3D[i].x;
+				_obj.mCoordAxes1D[6 * i + 1] = vertices3D[i].y;
+				_obj.mCoordAxes1D[6 * i + 2] = vertices3D[i].z;
+			}
+
+			GLuint vaoHandle, vboHandle;
+			glGenVertexArrays(1, &vaoHandle);
+			glGenBuffers(1, &vboHandle);
+
+			glBindVertexArray(vaoHandle);
+			glBindBuffer(GL_ARRAY_BUFFER, vboHandle);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(_obj.mCoordAxes1D), _obj.mCoordAxes1D, GL_STATIC_DRAW);
+
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+
+			mpShaderCoordAxes->use();
+			mpShaderCoordAxes->setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(glm::mat4()));
+			mpShaderCoordAxes->setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
+			mpShaderCoordAxes->setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawArrays(GL_TRIANGLES, 0, length(vertices3D));
+
+			glDeleteVertexArrays(1, &vaoHandle);
+			glDeleteBuffers(1, &vboHandle);
+		}
+	}
+}
+
+#endif // !CCKIT_GLCAMERA_H

@@ -1,0 +1,6 @@
+
+cl main.obj glad.obj /I "\OpenGl Libraries\include" /link /LIBPATH:"\OpenGl Libraries\lib" assimp.lib glfw3.lib
+
+
+cl /EHsc main.cpp glad.c /link "OpenGL Libraries\lib\assimp-vc140-mt.lib" "OpenGL Libraries\lib\glfw3.lib" "OpenGL Libraries\lib\glfw3_d.lib"
+cl main.obj glad.obj /link "OpenGL Libraries\lib\assimp.lib" "OpenGL Libraries\lib\glfw3.lib"

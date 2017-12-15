@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{9158952c-039a-45d1-9a8a-15acdc503c28}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\OpenGL Extension ESSENTIAL\OpenGl Library\src\glad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GLmesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLmodel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLshader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLcamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glm_matrix_transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLobj.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLlight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\shader0.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shader0.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shader1.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shader1.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderLamp.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderLamp.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderCoordAxes.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderCoordAxes.vs">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
