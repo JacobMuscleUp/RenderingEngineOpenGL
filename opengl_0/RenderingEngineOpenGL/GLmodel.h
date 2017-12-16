@@ -6,7 +6,7 @@
 #include <assimp/postprocess.h>
 
 #include "GLmesh.h"
-#include "utils.h"
+#include "GLutils.h"
 
 namespace cckit
 {
@@ -18,9 +18,41 @@ namespace cckit
 			Load(_path);
 		}
 
-		void draw(const GLshader& _shader) {
+		void render(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
+			, const GLshader* _pShaderOutline = nullptr
+			, std::function<void(const GLshader&)> _uniformConfigOutline = [](const GLshader&) {}
+			, bool _bOutlined = false) {
+			glEnable(GL_CULL_FACE);
+			
+			if (_bOutlined) {
+				glClear(GL_STENCIL_BUFFER_BIT);
+				glEnable(GL_STENCIL_TEST);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+				glStencilFunc(GL_ALWAYS, 1, 0xFF);
+				glStencilMask(0xFF);
+			}
+
+			_shader.use();
+			_uniformConfig(_shader);
 			for (GLmesh* pMesh : mMeshes)
-				pMesh->draw(_shader);
+				pMesh->render(_shader);
+
+			if (_bOutlined) {
+				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+				glStencilMask(0x00);
+				glDisable(GL_DEPTH_TEST);
+
+				_pShaderOutline->use();
+				_uniformConfigOutline(*_pShaderOutline);
+				for (GLmesh* pMesh : mMeshes)
+					pMesh->render(*_pShaderOutline);
+
+				glEnable(GL_DEPTH_TEST);
+				glStencilMask(0xFF);
+				glDisable(GL_STENCIL_TEST);
+			}
+
+			glDisable(GL_CULL_FACE);
 		}
 	private:
 		void Load(const std::string& _path) {

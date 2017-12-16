@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "GLshader.h"
-#include "utils.h"
+#include "GLutils.h"
 #include "GLobj.h"
 
 namespace cckit
@@ -32,7 +32,8 @@ namespace cckit
 			, float _moveSpeed = MOVE_SPEED, float _rotateSpeed = ROTATE_SPEED, float _zoomSpeed = ZOOM_SPEED)
 			: mPos(_pos), mWorldUp(_worldUp), mForward(glm::vec3(0, 0, -1)), mYaw(_yaw), mPitch(_pitch)
 			, mMoveSpeed(_moveSpeed), mRotateSpeed(_rotateSpeed), mZoomSpeed(_zoomSpeed)
-			, mpShader(nullptr), mProjectionMat() {
+			, mpShader(nullptr), mpShaderOutline(nullptr), mpShaderCoordAxes(nullptr)
+			, mProjectionMat() {
 			UpdateCoordAxes();
 		}
 
@@ -60,6 +61,7 @@ namespace cckit
 		}
 
 		void set_shader(const GLshader& _shader);
+		void set_shader_outline(const GLshader& _shader);
 		void set_shader_coord_axes(const GLshader& _shader);
 		void set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far);
 
@@ -86,6 +88,7 @@ namespace cckit
 		float mMoveSpeed, mRotateSpeed, mZoomSpeed;
 
 		const GLshader* mpShader;
+		const GLshader* mpShaderOutline;
 		const GLshader* mpShaderCoordAxes;
 		glm::mat4 mProjectionMat;
 	};
@@ -99,6 +102,10 @@ namespace cckit
 		mpShader = &_shader;
 	}
 
+	void GLcamera::set_shader_outline(const GLshader& _shader) {
+		mpShaderOutline = &_shader;
+	}
+
 	void GLcamera::set_shader_coord_axes(const GLshader& _shader) {
 		mpShaderCoordAxes = &_shader;
 	}
@@ -108,58 +115,39 @@ namespace cckit
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
-		_obj.setup_render_config();
+		_obj.setup_render_config([&_obj](glm::mat4& _mat) {
+			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
+		});
 
-		const glm::mat4& modelMat = _obj.model_mat();
+		const glm::mat4& modelMat = _obj.mModelMat
+			, outlineModelMat = _obj.mOutlineModelMat;
 		glm::mat4 normalModelMat = glm::transpose(glm::inverse(modelMat));
-
-		mpShader->use();
-		mpShader->setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));
-		mpShader->setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
-		mpShader->setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
-		mpShader->setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
-
-		mpShader->mShaderConfig(*mpShader);
-
+		// render model and outline
 		glPolygonMode(GL_FRONT_AND_BACK, _renderMode);
-		_obj.model_ptr()->draw(*mpShader);
-
-		if (_obj.mbCoordAxesDrawn) {
-			glm::vec3 vertices3D[] = { 
-				_obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mForward, _obj.mPosition
-				, _obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mRight, _obj.mPosition
-				, _obj.mPosition, _obj.mPosition + _obj.mCoordAxisLength * _obj.mUp, _obj.mPosition
-			};
-			for (int i = length(vertices3D) - 1; i >= 0; --i) {
-				_obj.mCoordAxes1D[6 * i] = vertices3D[i].x;
-				_obj.mCoordAxes1D[6 * i + 1] = vertices3D[i].y;
-				_obj.mCoordAxes1D[6 * i + 2] = vertices3D[i].z;
-			}
-
-			GLuint vaoHandle, vboHandle;
-			glGenVertexArrays(1, &vaoHandle);
-			glGenBuffers(1, &vboHandle);
-
-			glBindVertexArray(vaoHandle);
-			glBindBuffer(GL_ARRAY_BUFFER, vboHandle);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(_obj.mCoordAxes1D), _obj.mCoordAxes1D, GL_STATIC_DRAW);
-
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
-
-			mpShaderCoordAxes->use();
-			mpShaderCoordAxes->setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(glm::mat4()));
-			mpShaderCoordAxes->setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
-			mpShaderCoordAxes->setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			glDrawArrays(GL_TRIANGLES, 0, length(vertices3D));
-
-			glDeleteVertexArrays(1, &vaoHandle);
-			glDeleteBuffers(1, &vboHandle);
+		_obj.RenderModel(*mpShader
+			, [this, &modelMat, &normalModelMat](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
+			_shader.mShaderConfig(_shader);
 		}
+		, mpShaderOutline
+			, [this, &outlineModelMat, &_obj](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(outlineModelMat));
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+			_shader.set3fv("monoColor", glm::value_ptr(_obj.mOutlineColor));
+		});
+		// render coord axes
+		_obj.RenderCoordAxes(*mpShaderCoordAxes, [this](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(glm::mat4()));
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+		});
 	}
 }
 

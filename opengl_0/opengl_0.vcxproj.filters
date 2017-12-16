@@ -16,6 +16,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{9158952c-039a-45d1-9a8a-15acdc503c28}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Behaviors">
+      <UniqueIdentifier>{f22839af-1c53-4ce9-8770-a47d6742dd59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\RenderingEngineOpenGL">
+      <UniqueIdentifier>{bb9659d7-303c-40a1-bdf3-1977245a3f6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -26,28 +32,46 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GLmesh.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Behaviors\bull.h">
+      <Filter>Header Files\Behaviors</Filter>
     </ClInclude>
-    <ClInclude Include="GLmodel.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Behaviors\spider.h">
+      <Filter>Header Files\Behaviors</Filter>
     </ClInclude>
-    <ClInclude Include="GLshader.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Behaviors\all_behaviors.h">
+      <Filter>Header Files\Behaviors</Filter>
     </ClInclude>
-    <ClInclude Include="GLcamera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Behaviors\lamp.h">
+      <Filter>Header Files\Behaviors</Filter>
     </ClInclude>
-    <ClInclude Include="glm_matrix_transform.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="RenderingEngineOpenGL\GLmesh.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="GLobj.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="RenderingEngineOpenGL\GLmodel.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="GLlight.h">
+    <ClInclude Include="RenderingEngineOpenGL\GLobj.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLshader.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLutils.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLcamera.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLlight.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -70,10 +94,16 @@
     <None Include="Shaders\shaderLamp.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\shaderCoordAxes.fs">
+    <None Include="Shaders\shaderMonoColor0.vs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\shaderCoordAxes.vs">
+    <None Include="Shaders\shaderMonoColor0.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderMonoColor1.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderMonoColor1.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

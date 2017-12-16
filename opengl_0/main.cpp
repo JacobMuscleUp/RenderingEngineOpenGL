@@ -7,11 +7,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "GLshader.h"
-#include "GLmodel.h"
-#include "GLcamera.h"
-#include "GLobj.h"
-#include "utils.h"
+#include "RenderingEngineOpenGL/GLshader.h"
+#include "RenderingEngineOpenGL/GLmodel.h"
+#include "RenderingEngineOpenGL/GLcamera.h"
+#include "RenderingEngineOpenGL/GLobj.h"
+#include "RenderingEngineOpenGL/GLutils.h"
+
+#include "Behaviors/all_behaviors.h"
+#include "global.h"
 
 using std::cout; using std::endl; using std::cin;
 
@@ -26,8 +29,9 @@ void draw_elements_shader_prog(GLFWwindow* _pWindow, cckit::GLshader _program, G
 template<GLint Width, GLint Height>
 void draw_grid(GLFWwindow* _pWindow, const cckit::GLshader& _program, GLenum _drawMode = GL_LINE);
 
+// WORKING HERE
 void fps_assimp(GLFWwindow* _pWindow);
-void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime);
+void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime, cckit::lamp& _lampBehavior);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -433,27 +437,8 @@ void draw_grid(GLFWwindow* _pWindow, const cckit::GLshader& _program, GLenum _dr
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-cckit::GLcamera camera(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-glm::vec3 dirLightDir(1, -1, 1);
-cckit::GLlight ptLights[1] { cckit::GLlight(glm::vec3(0, 0, -2), glm::vec3(1, 1, 1)) };
-
 void fps_assimp(GLFWwindow* _pWindow)
 {
-	cckit::GLshader shaderTexture("Shaders/shader0.vs", "Shaders/shader0.fs");
-	cckit::GLshader shaderDiffuse("Shaders/shader1.vs", "Shaders/shader1.fs");
-	cckit::GLshader shaderLamp("Shaders/shaderLamp.vs", "Shaders/shaderLamp.fs");
-	cckit::GLshader shaderCoordAxes("Shaders/shaderCoordAxes.vs", "Shaders/shaderCoordAxes.fs");
-
-	cckit::GLobj spider("Resources/OBJ/spider/spider.obj");
-	cckit::GLobj bull("Resources/OBJ/bull/bull.obj");
-	cckit::GLobj box("Resources/OBJ/box/box.obj");
-
-	spider.mlocalRotation = glm::vec3(0, 90, 0);
-	spider.mCoordAxisLength = 2.0f;
-	spider.mbCoordAxesDrawn = true;
-	bull.mlocalRotation = glm::vec3(0, 180, 0);
-	bull.mbCoordAxesDrawn = true;
-	
 	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(_pWindow, [](GLFWwindow* pWindow, double posX, double posY) {
 		static bool bFirstEntry = true;
@@ -474,9 +459,28 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 	glEnable(GL_DEPTH_TEST);
 
+	cckit::GLshader shaderTexture("Shaders/shader0.vs", "Shaders/shader0.fs");
+	cckit::GLshader shaderDiffuse("Shaders/shader1.vs", "Shaders/shader1.fs");
+	cckit::GLshader shaderLamp("Shaders/shaderLamp.vs", "Shaders/shaderLamp.fs");
+	cckit::GLshader shaderCoordAxes("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
+	cckit::GLshader shaderOutline("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
+
+	cckit::GLobj spider("Resources/OBJ/spider/spider.obj");
+	cckit::GLobj bull("Resources/OBJ/bull/bull.obj");
+	cckit::GLobj lamp("Resources/OBJ/box/box.obj");
+
+	spider.add_behavior(cckit::spider());
+	bull.add_behavior(cckit::bull());
+	lamp.add_behavior(cckit::lamp([](cckit::lamp& _behavior) {
+		_behavior.mStartingPos = ptLights[0].mPos;
+	}));
+	cckit::lamp& lampBehavior = *lamp.get_behavior<cckit::lamp>();
+
+	for (auto pObj : cckit::GLobj::Objs())
+		pObj->start_behaviors();// start
+
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
-
 	while (!glfwWindowShouldClose(_pWindow)) {
 		float currentFrameTime = glfwGetTime();
 		deltaTime = currentFrameTime - lastFrameTime;
@@ -484,20 +488,12 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
-		process_keyboard(_pWindow, camera, deltaTime);
+		process_keyboard(_pWindow, camera, deltaTime, lampBehavior);
 
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		spider.mRotation = glm::vec3(0, 270, 0);
-		spider.mScale = glm::vec3(0.01f);
-		bull.set_position(glm::vec3(0, 0, -1));
-		bull.mRotation = glm::vec3(0, 270, 0);
-		bull.mScale = glm::vec3(0.1f);
-		box.set_position(ptLights[0].mPos);
-		box.mScale = glm::vec3(0.1f);
 		
-		shaderTexture.mShaderConfig = [](const cckit::GLshader& _shader) {
+		shaderTexture.mShaderConfig = [&lampBehavior](const cckit::GLshader& _shader) {
 			glm::vec3 dirLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
 				, dirLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
 				, dirLightSpecular = glm::vec3(1.0f);
@@ -517,7 +513,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 			_shader.set3fv("dirLight.diffuse", glm::value_ptr(dirLightDiffuse));
 			_shader.set3fv("dirLight.specular", glm::value_ptr(dirLightSpecular));
 
-			_shader.set3fv("ptLight.pos", glm::value_ptr(ptLights[0].mPos));
+			_shader.set3fv("ptLight.pos", glm::value_ptr(lampBehavior.obj().position()));
 			_shader.set3fv("ptLight.ambient", glm::value_ptr(ptLightAmbient));
 			_shader.set3fv("ptLight.diffuse", glm::value_ptr(ptLightDiffuse));
 			_shader.set3fv("ptLight.specular", glm::value_ptr(ptLightSpecular));
@@ -540,18 +536,11 @@ void fps_assimp(GLFWwindow* _pWindow)
 		};
 		shaderLamp.mShaderConfig = shaderDiffuse.mShaderConfig = shaderTexture.mShaderConfig;
 
-		spider.mTranslateFunc = [](glm::mat4& _modelMat) {
-			_modelMat = glm::translate(_modelMat, glm::vec3(sin(glfwGetTime()), 0, 0));
-		};
-		spider.mRotateFunc = [&spider](glm::mat4& _modelMat) {
-			_modelMat = glm::rotate(_modelMat, glm::radians((float)glfwGetTime() * 10), glm::vec3(2, 3, 1));
-		};
-		spider.mScaleFunc = [](glm::mat4& _modelMat) {
-			//_modelMat = glm::scale(_modelMat, glm::vec3(sin(glfwGetTime()) * 0.5f + 1.5f));
-		};
-		spider.set_position(glm::vec3(sin(glfwGetTime()), spider.position()[1], spider.position()[2]));
+		for (auto pObj : cckit::GLobj::Objs())
+			pObj->update_behaviors(deltaTime);// update
 		
 		camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+		camera.set_shader_outline(shaderOutline);
 		camera.set_shader_coord_axes(shaderCoordAxes);
 
 		camera.set_shader(shaderTexture);
@@ -559,11 +548,11 @@ void fps_assimp(GLFWwindow* _pWindow)
 		camera.set_shader(shaderDiffuse);
 		camera.render(bull);
 		camera.set_shader(shaderLamp);
-		camera.render(box);
+		camera.render(lamp); 
 	}
 }
 
-void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime)
+void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime, cckit::lamp& _lampBehavior)
 {
 	if (glfwGetKey(_pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS
 		|| glfwGetKey(_pWindow, GLFW_KEY_SPACE) == GLFW_PRESS
@@ -580,11 +569,11 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		_camera.process_keyboard(cckit::GLcamera::movement::right, _deltaTime);
 
 	if (glfwGetKey(_pWindow, GLFW_KEY_UP) == GLFW_PRESS)
-		ptLights[0].mPos += glm::vec3(0, 0, _deltaTime);
+		_lampBehavior.obj().set_position(_lampBehavior.obj().position() + glm::vec3(0, 0, _deltaTime));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_DOWN) == GLFW_PRESS)
-		ptLights[0].mPos -= glm::vec3(0, 0, _deltaTime);
+		_lampBehavior.obj().set_position(_lampBehavior.obj().position() - glm::vec3(0, 0, _deltaTime));
 	if (glfwGetKey(_pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
-		ptLights[0].mPos += glm::vec3(_deltaTime, 0, 0);
+		_lampBehavior.obj().set_position(_lampBehavior.obj().position() + glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
-		ptLights[0].mPos -= glm::vec3(_deltaTime, 0, 0);
+		_lampBehavior.obj().set_position(_lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
 }

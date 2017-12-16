@@ -47,7 +47,7 @@ namespace cckit
 			: mVertices(_vertices), mIndices(_indices), mTextures(_textures) {
 			Setup();
 		}
-		void draw(const GLshader& _shader) {
+		void render(const GLshader& _shader) {
 			GLuint diffuseIndex = 0
 				, specularIndex = 0
 				, normalIndex = 0

@@ -126,24 +126,32 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GLcamera.h" />
-    <ClInclude Include="GLlight.h" />
-    <ClInclude Include="GLmesh.h" />
-    <ClInclude Include="GLmodel.h" />
-    <ClInclude Include="glm_matrix_transform.h" />
-    <ClInclude Include="GLobj.h" />
-    <ClInclude Include="GLshader.h" />
-    <ClInclude Include="utils.h" />
+    <ClInclude Include="Behaviors\all_behaviors.h" />
+    <ClInclude Include="Behaviors\bull.h" />
+    <ClInclude Include="Behaviors\lamp.h" />
+    <ClInclude Include="Behaviors\spider.h" />
+    <ClInclude Include="global.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLlight.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLmesh.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLmodel.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLobj.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLshader.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLutils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\shaderCoordAxes.fs" />
-    <None Include="Shaders\shaderCoordAxes.vs" />
+    <None Include="Shaders\shaderMonoColor0.fs" />
+    <None Include="Shaders\shaderMonoColor0.vs" />
     <None Include="Shaders\shaderLamp.fs" />
     <None Include="Shaders\shaderLamp.vs" />
     <None Include="Shaders\shader0.fs" />
     <None Include="Shaders\shader0.vs" />
     <None Include="Shaders\shader1.fs" />
     <None Include="Shaders\shader1.vs" />
+    <None Include="Shaders\shaderMonoColor1.fs" />
+    <None Include="Shaders\shaderMonoColor1.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
