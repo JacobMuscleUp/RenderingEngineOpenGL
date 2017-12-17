@@ -8,6 +8,7 @@
 #include "GLmodel.h"
 #include "GLbehavior.h"
 #include "GLlight.h"
+#include "GLmatrixTransform.h"
 
 #define DEFAULT_OUTLINE_SCALE 1.02f
 
@@ -35,8 +36,7 @@ namespace cckit
 	public:
 		GLobj();
 		explicit GLobj(const std::string& _modelPath);
-
-		void setup_render_config(std::function<void(glm::mat4&)> _outlineModelMatConfig) const;
+		~GLobj();
 
 		const glm::mat4& model_mat() const { return mModelMat; }
 		GLmodel* model_ptr() const { return mpModel; }
@@ -46,11 +46,15 @@ namespace cckit
 			mPosition = mUnmodifiedPosition = _position;
 		}
 
+		void set_shader(const GLshader& _shader);
+
+		void face(const glm::vec3& _targetPos, glm::facing_mode _facingMode = glm::facing_mode::forward);
+
 		const glm::vec3& forward() const { return mForward; }
 		const glm::vec3& right() const { return mRight; }
 		const glm::vec3& up() const { return mUp; }
 
-		bool add_behavior(const GLbehavior& _behavior);
+		bool add_behavior(const GLbehavior* _pBehavior);
 		void clear_behaviors();
 		void start_behaviors() const;
 		void update_behaviors(float _deltaTime) const;
@@ -58,8 +62,11 @@ namespace cckit
 		template<typename BehaviorType>
 		BehaviorType* get_behavior() const;
 
+		void destroy() { delete this; }
+
 		static const std::unordered_set<const GLobj*>& Objs() { return mObjs; }
 	private:
+		void PrepareRenderStates(std::function<void(glm::mat4&)> _outlineModelMatConfig) const;
 		void RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 			, const GLshader* _pShaderOutline = nullptr
 			, std::function<void(const GLshader&)> _uniformConfigOutline = [](const GLshader&) {}) const;
@@ -93,6 +100,10 @@ namespace cckit
 	private:
 		GLmodel* mpModel;
 		glm::vec3 mLocalCenter;
+		const GLshader* mpShader;
+		mutable bool mbFacingTarget;
+		glm::vec3 mTargetPos;
+		glm::facing_mode mFacingMode;
 
 		mutable glm::mat4 mModelMat;
 		mutable glm::mat4 mOutlineModelMat;
@@ -111,7 +122,7 @@ namespace cckit
 	std::unordered_set<const GLobj*> GLobj::mObjs = std::unordered_set<const GLobj*>();
 
 	inline GLobj::GLobj()
-		: mpModel(nullptr), mModelMat()
+		: mpModel(nullptr), mbFacingTarget(false), mModelMat()
 		, mLocalPosition(0.0f), mlocalRotation(0.0f), mLocalScale(1.0f)
 		, mPosition(0.0f), mRotation(0.0f), mScale(1.0f)
 		, mForward(M_FORWARD_AXIS[0], M_FORWARD_AXIS[1], M_FORWARD_AXIS[2])
@@ -168,55 +179,43 @@ namespace cckit
 		mLocalCenter = glm::vec3((xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f, (zMin + zMax) * 0.5f);
 	}
 
-	void GLobj::setup_render_config(std::function<void(glm::mat4&)> _outlineModelMatConfig) const {
-		glm::vec3 scale = mLocalScale * mScale;
-
-		mPosition = mUnmodifiedPosition;
-		mModelMat = glm::mat4();
-
-		glm::mat4 translateMat;
-		mTranslateFunc(translateMat);
-		mPosition = translateMat * mPosition;
-		mModelMat = glm::translate(mModelMat, mPosition);
-		glm::mat4 rotateMat;
-		mRotateFunc(rotateMat);
-		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.x), glm::vec3(1, 0, 0));
-		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.y), glm::vec3(0, 1, 0));
-		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.z), glm::vec3(0, 0, 1));
-		mModelMat *= rotateMat;
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.x), glm::vec3(1, 0, 0));
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.y), glm::vec3(0, 1, 0));
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.z), glm::vec3(0, 0, 1));
-		mScaleFunc(mModelMat);
-		mModelMat = glm::scale(mModelMat, scale);
-
-		_outlineModelMatConfig(mOutlineModelMat = mModelMat);
-		mOutlineModelMat = glm::translate(mOutlineModelMat, -mLocalCenter);// symmetry
-		mModelMat = glm::translate(mModelMat, -mLocalCenter);// symmetry
-
-		mForward = rotateMat * M_FORWARD_AXIS;
-		mRight = rotateMat * M_RIGHT_AXIS;
-		mUp = rotateMat * M_UP_AXIS;
-		
-		// the next line of code is unnecessary because set_position(const glm::mat4&) is not used here
-		//mUnmodifiedPosition = glm::inverse(translateMat) * mPosition;
+	inline GLobj::~GLobj() {
+		for (auto pBehavior : mBehaviors) {
+			pBehavior->on_destroyed();
+			delete pBehavior;
+		}
+		delete mpModel;
+		mObjs.erase(this);
 	}
 
-	bool GLobj::add_behavior(const GLbehavior& _behavior) {
-		_behavior.mpObj = this;
-		return mBehaviors.insert(&_behavior).second;
+	inline void GLobj::set_shader(const GLshader& _shader) {
+		mpShader = &_shader;
 	}
 
-	void GLobj::clear_behaviors() {
+	inline void GLobj::face(const glm::vec3& _targetPos, glm::facing_mode _facingMode) {
+		mbFacingTarget = true;
+		mTargetPos = _targetPos;
+		mFacingMode = _facingMode;
+	}
+
+	inline bool GLobj::add_behavior(const GLbehavior* _pBehavior) {
+		_pBehavior->mpObj = this;
+		return mBehaviors.insert(_pBehavior).second;
+	}
+
+	inline void GLobj::clear_behaviors() {
 		mBehaviors.clear();
 	}
 
-	void GLobj::start_behaviors() const {
-		for (auto pBehavior : mBehaviors)
-			pBehavior->start();
+	inline void GLobj::start_behaviors() const {
+		for (auto pBehavior : mBehaviors) {
+			if (!pBehavior->started())
+				pBehavior->start();
+			pBehavior->manage();
+		}
 	}
 
-	void GLobj::update_behaviors(float _deltaTime) const {
+	inline void GLobj::update_behaviors(float _deltaTime) const {
 		for (auto pBehavior : mBehaviors)
 			pBehavior->update(_deltaTime);
 	}
@@ -231,7 +230,47 @@ namespace cckit
 		return nullptr;
 	}
 
-	void GLobj::RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
+	void GLobj::PrepareRenderStates(std::function<void(glm::mat4&)> _outlineModelMatConfig) const {
+		glm::vec3 scale = mLocalScale * mScale;
+
+		mPosition = mUnmodifiedPosition;
+		mModelMat = glm::mat4();
+		// scale => rotate => translate
+		glm::mat4 translateMat;
+		mTranslateFunc(translateMat);
+		mPosition = translateMat * mPosition;
+		mModelMat = glm::translate(mModelMat, mPosition);
+
+		glm::mat4 rotateMat;
+		mRotateFunc(rotateMat);
+		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.x), glm::vec3(1, 0, 0));
+		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.y), glm::vec3(0, 1, 0));
+		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.z), glm::vec3(0, 0, 1));
+		if (mbFacingTarget) {
+			mbFacingTarget = false;
+			rotateMat = glm::lookAt(mPosition, mTargetPos, mFacingMode);
+		}
+		mModelMat *= rotateMat;
+		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.x), glm::vec3(1, 0, 0));
+		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.y), glm::vec3(0, 1, 0));
+		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.z), glm::vec3(0, 0, 1));
+
+		mScaleFunc(mModelMat);
+		mModelMat = glm::scale(mModelMat, scale);
+		//! scale => rotate => translate
+		_outlineModelMatConfig(mOutlineModelMat = mModelMat);
+		mOutlineModelMat = glm::translate(mOutlineModelMat, -mLocalCenter);// symmetry
+		mModelMat = glm::translate(mModelMat, -mLocalCenter);// symmetry
+
+		mForward = rotateMat * M_FORWARD_AXIS;
+		mRight = rotateMat * M_RIGHT_AXIS;
+		mUp = rotateMat * M_UP_AXIS;
+
+		// the next line of code is unnecessary because set_position(const glm::mat4&) is not used here
+		//mUnmodifiedPosition = glm::inverse(translateMat) * mPosition;
+	}
+
+	inline void GLobj::RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 		, const GLshader* _pShaderOutline, std::function<void(const GLshader&)> _uniformConfigOutline) const {
 		mpModel->render(_shader, _uniformConfig, _pShaderOutline, _uniformConfigOutline, mbOutlined);
 	}

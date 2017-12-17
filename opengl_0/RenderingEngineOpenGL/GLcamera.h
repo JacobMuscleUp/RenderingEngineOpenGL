@@ -115,7 +115,7 @@ namespace cckit
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
-		_obj.setup_render_config([&_obj](glm::mat4& _mat) {
+		_obj.PrepareRenderStates([&_obj](glm::mat4& _mat) {
 			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
 		});
 
@@ -124,7 +124,7 @@ namespace cckit
 		glm::mat4 normalModelMat = glm::transpose(glm::inverse(modelMat));
 		// render model and outline
 		glPolygonMode(GL_FRONT_AND_BACK, _renderMode);
-		_obj.RenderModel(*mpShader
+		_obj.RenderModel(*_obj.mpShader
 			, [this, &modelMat, &normalModelMat](const GLshader& _shader) {
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));

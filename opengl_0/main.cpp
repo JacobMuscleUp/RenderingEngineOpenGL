@@ -15,6 +15,7 @@
 
 #include "Behaviors/all_behaviors.h"
 #include "global.h"
+#include "afx_config.h"
 
 using std::cout; using std::endl; using std::cin;
 
@@ -456,7 +457,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		camera.process_mouse(offsetX, offsetY);
 	});
-
+	
 	glEnable(GL_DEPTH_TEST);
 
 	cckit::GLshader shaderTexture("Shaders/shader0.vs", "Shaders/shader0.fs");
@@ -465,19 +466,26 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLshader shaderCoordAxes("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	cckit::GLshader shaderOutline("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
 
-	cckit::GLobj spider("Resources/OBJ/spider/spider.obj");
-	cckit::GLobj bull("Resources/OBJ/bull/bull.obj");
-	cckit::GLobj lamp("Resources/OBJ/box/box.obj");
+	cckit::GLobj& spider = *new cckit::GLobj("Resources/OBJ/spider/spider.obj");
+	cckit::GLobj& bull = *new cckit::GLobj("Resources/OBJ/bull/bull.obj");
+	cckit::GLobj& lamp = *new cckit::GLobj("Resources/OBJ/box/box.obj");
 
-	spider.add_behavior(cckit::spider());
-	bull.add_behavior(cckit::bull());
-	lamp.add_behavior(cckit::lamp([](cckit::lamp& _behavior) {
+	spider.set_shader(shaderTexture);
+	bull.set_shader(shaderDiffuse);
+	lamp.set_shader(shaderLamp);
+
+	spider.add_behavior(new cckit::spider);
+	bull.add_behavior(new cckit::bull);
+	lamp.add_behavior(new cckit::lamp([](cckit::lamp& _behavior) {
 		_behavior.mStartingPos = ptLights[0].mPos;
 	}));
 	cckit::lamp& lampBehavior = *lamp.get_behavior<cckit::lamp>();
 
-	for (auto pObj : cckit::GLobj::Objs())
-		pObj->start_behaviors();// start
+	bull.destroy();/////////////////////
+
+	bull = *new cckit::GLobj("Resources/OBJ/bull/bull.obj");
+	bull.set_shader(shaderDiffuse);
+	bull.add_behavior(new cckit::bull);
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
@@ -504,7 +512,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 				, spotLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
 				, spotLightSpecular = glm::vec3(1.0f);
 
-			_shader.set3fv("material1.diffuse", glm::value_ptr(glm::vec3(0, 1, 0)));
+			_shader.set3fv("material1.diffuse", glm::value_ptr(glm::vec3(1, 0, 0)));
 			_shader.set3fv("material1.specular", glm::value_ptr(glm::vec3(1.0f)));
 			_shader.set1i("material1.shininess", 32);
 
@@ -537,18 +545,17 @@ void fps_assimp(GLFWwindow* _pWindow)
 		shaderLamp.mShaderConfig = shaderDiffuse.mShaderConfig = shaderTexture.mShaderConfig;
 
 		for (auto pObj : cckit::GLobj::Objs())
+			pObj->start_behaviors();// start
+
+		for (auto pObj : cckit::GLobj::Objs())
 			pObj->update_behaviors(deltaTime);// update
 		
 		camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 		camera.set_shader_outline(shaderOutline);
 		camera.set_shader_coord_axes(shaderCoordAxes);
-
-		camera.set_shader(shaderTexture);
-		camera.render(spider);
-		camera.set_shader(shaderDiffuse);
-		camera.render(bull);
-		camera.set_shader(shaderLamp);
-		camera.render(lamp); 
+		
+		for (auto pObj : cckit::GLobj::Objs())
+			camera.render(*pObj);// render
 	}
 }
 

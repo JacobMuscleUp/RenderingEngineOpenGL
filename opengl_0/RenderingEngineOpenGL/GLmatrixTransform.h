@@ -1,6 +1,8 @@
 #pragma once
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace glm
 {
@@ -65,5 +67,86 @@ namespace glm
 		result[3][3] = m[3][3];
 
 		return result;
+	}
+
+	/*template <typename T, precision P>
+	GLM_FUNC_DECL glm::tmat4x4<T, P> lookAt(
+		const glm::tvec3<T, P>& _forward
+		, const glm::tvec3<T, P>& _targetDir) {
+		glm::tvec3<T, P> unitForward = glm::normalize(_forward)
+			, unitTargetDir = glm::normalize(_targetDir)
+			, rotateAxis = glm::cross(unitForward, unitTargetDir);
+		GLfloat cosRadAngle = glm::dot(unitForward, unitTargetDir);
+		if (cosRadAngle < 0.0f)
+			rotateAxis *= -1.0f;
+		GLfloat radAngle = glm::acos(cosRadAngle);
+
+		if (glm::abs(rotateAxis[0]) < FLT_EPSILON
+			&& glm::abs(rotateAxis[1]) < FLT_EPSILON
+			&& glm::abs(rotateAxis[2]) < FLT_EPSILON)
+			return glm::mat4();
+		return glm::rotate(glm::mat4(), radAngle, rotateAxis);
+	}*/
+
+	enum class facing_mode { forward, back, left, right, bottom, top, Count };
+
+	template <typename T, precision P>
+	GLM_FUNC_DECL glm::tmat4x4<T, P> lookAt(
+		const glm::tvec3<T, P>& _eyePos
+		, const glm::tvec3<T, P>& _targetPos
+		, facing_mode _facingMode)
+	{
+		glm::vec3 targetDir(glm::normalize(_targetPos - _eyePos));
+		glm::vec3 up(0, 1, 0);
+		if (abs(targetDir.x)< FLT_EPSILON && abs(targetDir.z) < FLT_EPSILON) 
+			up = (targetDir.y < 0) ? glm::vec3(0, 0, 1) : glm::vec3(0, 0, -1);
+		glm::vec3 right = glm::normalize(glm::cross(up, targetDir));
+		up = glm::cross(targetDir, right);// since targetDir is perpendicular to right
+
+		switch (_facingMode) {
+		case facing_mode::forward:
+			return glm::mat4(
+				right.x, right.y, right.z, 0,
+				up.x, up.y, up.z, 0,
+				targetDir.x, targetDir.y, targetDir.z, 0,
+				0, 0, 0, 1
+			);
+		case facing_mode::back:
+			return glm::mat4(
+				right.x, right.y, right.z, 0,
+				up.x, up.y, up.z, 0,
+				-targetDir.x, -targetDir.y, -targetDir.z, 0,
+				0, 0, 0, 1
+			);
+		case facing_mode::right:
+			return glm::mat4(
+				targetDir.x, targetDir.y, targetDir.z, 0
+				, up.x, up.y, up.z, 0
+				, right.x, right.y, right.z, 0
+				, 0, 0, 0, 1
+			);
+		case facing_mode::left:
+			return glm::mat4(
+				targetDir.x, targetDir.y, targetDir.z, 0
+				, up.x, up.y, up.z, 0
+				, -right.x, -right.y, -right.z, 0
+				, 0, 0, 0, 1
+			);
+		case facing_mode::top:
+			return glm::mat4(
+				up.x, up.y, up.z, 0
+				, targetDir.x, targetDir.y, targetDir.z, 0
+				, right.x, right.y, right.z, 0
+				, 0, 0, 0, 1
+			);
+		case facing_mode::bottom:// FIX NEEDED
+			return glm::mat4(
+				-up.x, -up.y, -up.z, 0
+				, targetDir.x, targetDir.y, targetDir.z, 0
+				, right.x, right.y, right.z, 0
+				, 0, 0, 0, 1
+			);
+			return glm::mat4();
+		}
 	}
 }

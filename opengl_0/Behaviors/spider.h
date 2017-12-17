@@ -12,7 +12,7 @@ namespace cckit
 	private:
 		typedef spider this_type;
 	public:
-		spider(std::function<void(this_type&)> _initConfig = [](this_type&) {}) { _initConfig(*this); }
+		spider(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() const {
 			mpObj->mlocalRotation = glm::vec3(0, 90, 0);

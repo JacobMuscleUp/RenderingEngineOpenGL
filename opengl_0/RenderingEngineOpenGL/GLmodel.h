@@ -18,6 +18,11 @@ namespace cckit
 			Load(_path);
 		}
 
+		~GLmodel() {
+			for (auto pMesh : mMeshes)
+				delete pMesh;
+		}
+
 		void render(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 			, const GLshader* _pShaderOutline = nullptr
 			, std::function<void(const GLshader&)> _uniformConfigOutline = [](const GLshader&) {}
