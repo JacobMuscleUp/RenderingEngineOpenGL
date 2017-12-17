@@ -129,11 +129,13 @@
     <ClInclude Include="afx_config.h" />
     <ClInclude Include="Behaviors\all_behaviors.h" />
     <ClInclude Include="Behaviors\bull.h" />
+    <ClInclude Include="Behaviors\bull_spawner.h" />
     <ClInclude Include="Behaviors\lamp.h" />
     <ClInclude Include="Behaviors\spider.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLlight.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmesh.h" />

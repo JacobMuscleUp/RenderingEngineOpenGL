@@ -12,6 +12,7 @@
 #include "RenderingEngineOpenGL/GLcamera.h"
 #include "RenderingEngineOpenGL/GLobj.h"
 #include "RenderingEngineOpenGL/GLutils.h"
+#include "RenderingEngineOpenGL/GLfactory.h"
 
 #include "Behaviors/all_behaviors.h"
 #include "global.h"
@@ -460,32 +461,41 @@ void fps_assimp(GLFWwindow* _pWindow)
 	
 	glEnable(GL_DEPTH_TEST);
 
-	cckit::GLshader shaderTexture("Shaders/shader0.vs", "Shaders/shader0.fs");
-	cckit::GLshader shaderDiffuse("Shaders/shader1.vs", "Shaders/shader1.fs");
-	cckit::GLshader shaderLamp("Shaders/shaderLamp.vs", "Shaders/shaderLamp.fs");
-	cckit::GLshader shaderCoordAxes("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
-	cckit::GLshader shaderOutline("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
+	pShaderTexture = new cckit::GLshader("Shaders/shader0.vs", "Shaders/shader0.fs");
+	pShaderDiffuse = new cckit::GLshader("Shaders/shader1.vs", "Shaders/shader1.fs");
+	pShaderLamp = new cckit::GLshader("Shaders/shaderLamp.vs", "Shaders/shaderLamp.fs");
+	pShaderCoordAxes = new cckit::GLshader("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
+	pShaderOutline = new cckit::GLshader("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
 
-	cckit::GLobj& spider = *new cckit::GLobj("Resources/OBJ/spider/spider.obj");
-	cckit::GLobj& bull = *new cckit::GLobj("Resources/OBJ/bull/bull.obj");
-	cckit::GLobj& lamp = *new cckit::GLobj("Resources/OBJ/box/box.obj");
+	cckit::GLfactory<cckit::GLobj> objFactory;
+	cckit::GLobj& spider = *cckit::GLfactory<cckit::GLobj>::generate();
+	cckit::GLobj& bull = *cckit::GLfactory<cckit::GLobj>::generate();
+	cckit::GLobj& lamp = *cckit::GLfactory<cckit::GLobj>::generate();
+	cckit::GLobj& bullSpawner = *cckit::GLfactory<cckit::GLobj>::generate();
+	spider.load_model("Resources/OBJ/spider/spider.obj");
+	bull.load_model("Resources/OBJ/bull/bull.obj");
+	lamp.load_model("Resources/OBJ/box/box.obj");
 
-	spider.set_shader(shaderTexture);
-	bull.set_shader(shaderDiffuse);
-	lamp.set_shader(shaderLamp);
+	spider.set_shader(*pShaderTexture);
+	bull.set_shader(*pShaderDiffuse);
+	lamp.set_shader(*pShaderLamp);
 
 	spider.add_behavior(new cckit::spider);
 	bull.add_behavior(new cckit::bull);
 	lamp.add_behavior(new cckit::lamp([](cckit::lamp& _behavior) {
 		_behavior.mStartingPos = ptLights[0].mPos;
 	}));
+	bullSpawner.add_behavior(new cckit::bull_spawner([](cckit::bull_spawner& _behavior) {
+		_behavior.mSpawnTime = CCKIT_BULL_SPAWN_TIME;
+		_behavior.mSpawnTimer = 0.0f;
+	}));
 	cckit::lamp& lampBehavior = *lamp.get_behavior<cckit::lamp>();
 
-	bull.destroy();/////////////////////
+	/*bull.destroy();/////////////////////
 
 	bull = *new cckit::GLobj("Resources/OBJ/bull/bull.obj");
 	bull.set_shader(shaderDiffuse);
-	bull.add_behavior(new cckit::bull);
+	bull.add_behavior(new cckit::bull);*/
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
@@ -501,7 +511,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		shaderTexture.mShaderConfig = [&lampBehavior](const cckit::GLshader& _shader) {
+		pShaderTexture->mShaderConfig = [&lampBehavior](const cckit::GLshader& _shader) {
 			glm::vec3 dirLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
 				, dirLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
 				, dirLightSpecular = glm::vec3(1.0f);
@@ -542,7 +552,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 			_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
 		};
-		shaderLamp.mShaderConfig = shaderDiffuse.mShaderConfig = shaderTexture.mShaderConfig;
+		pShaderLamp->mShaderConfig = pShaderDiffuse->mShaderConfig = pShaderTexture->mShaderConfig;
 
 		for (auto pObj : cckit::GLobj::Objs())
 			pObj->start_behaviors();// start
@@ -551,8 +561,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 			pObj->update_behaviors(deltaTime);// update
 		
 		camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-		camera.set_shader_outline(shaderOutline);
-		camera.set_shader_coord_axes(shaderCoordAxes);
+		camera.set_shader_outline(*pShaderOutline);
+		camera.set_shader_coord_axes(*pShaderCoordAxes);
 		
 		for (auto pObj : cckit::GLobj::Objs())
 			camera.render(*pObj);// render

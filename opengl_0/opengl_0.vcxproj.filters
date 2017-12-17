@@ -77,6 +77,12 @@
     <ClInclude Include="afx_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLfactory.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Behaviors\bull_spawner.h">
+      <Filter>Header Files\Behaviors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader0.fs">

@@ -17,7 +17,7 @@ namespace cckit
 	public:
 		bull(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
-		void start() const {
+		void start() {
 			mpObj->mlocalRotation = glm::vec3(0, 180, 0);
 			mpObj->mbCoordAxesDrawn = true;
 			mpObj->mbOutlined = true;
@@ -29,16 +29,16 @@ namespace cckit
 			mpObj->mScale = glm::vec3(0.1f);
 		}
 
-		void update(float _deltaTime) const {
+		void update(float _deltaTime) {
 			mpObj->mRotateFunc = [this](glm::mat4& _modelMat) {
 				_modelMat = glm::rotate(_modelMat, glm::radians((float)glfwGetTime() * 20), glm::vec3(0, 1, 0));
 			};
 			mpObj->face(camera.pos(), glm::facing_mode::forward);
-			mpObj->set_position(mpObj->position() + mpObj->forward() * _deltaTime * 0.1f);
+			mpObj->set_position(mpObj->position() + mpObj->forward() * _deltaTime * 0.5f);
 		}
 
-		void on_destroyed() const {
-			std::cout << "killed" << "\n";
+		void on_destroyed() {
+			std::cout << "bull destroyed" << "\n";
 		}
 	};
 }

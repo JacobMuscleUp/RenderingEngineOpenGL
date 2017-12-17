@@ -14,12 +14,12 @@ namespace cckit
 	public:
 		lamp(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
-		void start() const {
+		void start() {
 			mpObj->set_position(mStartingPos);
 			mpObj->mScale = glm::vec3(0.1f);
 		}
 
-		/*void update(float _deltaTime) const {
+		/*void update(float _deltaTime) {
 			
 		}*/
 	public:

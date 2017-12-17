@@ -25,6 +25,8 @@
 namespace cckit
 {
 	class GLcamera;
+	template<typename ObjType>
+	class GLfactory;
 
 	class GLobj
 	{
@@ -33,10 +35,13 @@ namespace cckit
 		static glm::vec3 M_RIGHT_AXIS;
 		static glm::vec3 M_UP_AXIS;
 		static glm::vec3 M_DEFAULT_OUTLINE_COLOR;
-	public:
+	private:
 		GLobj();
 		explicit GLobj(const std::string& _modelPath);
+	public:
 		~GLobj();
+
+		bool load_model(const std::string& _modelPath);
 
 		const glm::mat4& model_mat() const { return mModelMat; }
 		GLmodel* model_ptr() const { return mpModel; }
@@ -54,7 +59,7 @@ namespace cckit
 		const glm::vec3& right() const { return mRight; }
 		const glm::vec3& up() const { return mUp; }
 
-		bool add_behavior(const GLbehavior* _pBehavior);
+		bool add_behavior(GLbehavior* _pBehavior);
 		void clear_behaviors();
 		void start_behaviors() const;
 		void update_behaviors(float _deltaTime) const;
@@ -109,11 +114,12 @@ namespace cckit
 		mutable glm::mat4 mOutlineModelMat;
 		mutable GLfloat mCoordAxes1D[54];// 6:3:3 <=> vertAttribs : verts : coordAxes
 
-		std::unordered_set<const GLbehavior*> mBehaviors;
+		std::unordered_set<GLbehavior*> mBehaviors;
 
 		static std::unordered_set<const GLobj*> mObjs;
 
 		friend GLcamera;
+		friend GLfactory<GLobj>;
 	};
 	glm::vec3 GLobj::M_FORWARD_AXIS = FORWARD_AXIS;
 	glm::vec3 GLobj::M_RIGHT_AXIS = RIGHT_AXIS;
@@ -150,8 +156,23 @@ namespace cckit
 
 	GLobj::GLobj(const std::string& _modelPath)
 		: GLobj() {
+		load_model(_modelPath);
+	}
+
+	inline GLobj::~GLobj() {
+		for (auto pBehavior : mBehaviors) {
+			pBehavior->on_destroyed();
+			delete pBehavior;
+		}
+		delete mpModel;
+		mObjs.erase(this);
+		std::cout << "obj destroyed" << "\n";
+	}
+
+	bool GLobj::load_model(const std::string& _modelPath) {
+		if (mpModel) delete mpModel;
 		mpModel = new GLmodel(_modelPath);
-		if (!mpModel) return;
+		if (!mpModel) return false;
 
 		GLfloat xMin = FLT_MAX, xMax = FLT_MIN
 			, yMin = FLT_MAX, yMax = FLT_MIN
@@ -177,15 +198,7 @@ namespace cckit
 		}
 
 		mLocalCenter = glm::vec3((xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f, (zMin + zMax) * 0.5f);
-	}
-
-	inline GLobj::~GLobj() {
-		for (auto pBehavior : mBehaviors) {
-			pBehavior->on_destroyed();
-			delete pBehavior;
-		}
-		delete mpModel;
-		mObjs.erase(this);
+		return true;
 	}
 
 	inline void GLobj::set_shader(const GLshader& _shader) {
@@ -198,7 +211,7 @@ namespace cckit
 		mFacingMode = _facingMode;
 	}
 
-	inline bool GLobj::add_behavior(const GLbehavior* _pBehavior) {
+	inline bool GLobj::add_behavior(GLbehavior* _pBehavior) {
 		_pBehavior->mpObj = this;
 		return mBehaviors.insert(_pBehavior).second;
 	}

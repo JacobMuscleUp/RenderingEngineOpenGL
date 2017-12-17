@@ -14,15 +14,15 @@ namespace cckit
 	{
 	public:
 		GLbehavior() : mbStarted(false) {}
-		void manage() const { if (!mbStarted) { mbStarted = true; } }
-		virtual void start() const {}
-		virtual void update(float _deltaTime) const {}
-		virtual void on_destroyed() const {}
+		void manage() { if (!mbStarted) { mbStarted = true; } }
+		virtual void start() {}
+		virtual void update(float _deltaTime) {}
+		virtual void on_destroyed() {}
 		GLobj& obj() const { return *mpObj; }
 		bool started() const { return mbStarted; }
 	protected:
-		mutable GLobj* mpObj;
-		mutable bool mbStarted;
+		GLobj* mpObj;
+		bool mbStarted;
 
 		friend GLobj;
 	};

@@ -14,7 +14,7 @@ namespace cckit
 	public:
 		spider(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
-		void start() const {
+		void start() {
 			mpObj->mlocalRotation = glm::vec3(0, 90, 0);
 			mpObj->mCoordAxisLength = 2.0f;
 			mpObj->mbCoordAxesDrawn = true;
@@ -24,7 +24,7 @@ namespace cckit
 			mpObj->mScale = glm::vec3(0.01f);
 		}
 
-		void update(float _deltaTime) const {
+		void update(float _deltaTime) {
 			mpObj->mTranslateFunc = [](glm::mat4& _modelMat) {
 				_modelMat = glm::translate(_modelMat, glm::vec3(sin(glfwGetTime()), 0, 0));
 			};

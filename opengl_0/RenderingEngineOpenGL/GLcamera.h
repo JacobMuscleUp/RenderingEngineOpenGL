@@ -32,7 +32,7 @@ namespace cckit
 			, float _moveSpeed = MOVE_SPEED, float _rotateSpeed = ROTATE_SPEED, float _zoomSpeed = ZOOM_SPEED)
 			: mPos(_pos), mWorldUp(_worldUp), mForward(glm::vec3(0, 0, -1)), mYaw(_yaw), mPitch(_pitch)
 			, mMoveSpeed(_moveSpeed), mRotateSpeed(_rotateSpeed), mZoomSpeed(_zoomSpeed)
-			, mpShader(nullptr), mpShaderOutline(nullptr), mpShaderCoordAxes(nullptr)
+			, mpShaderOutline(nullptr), mpShaderCoordAxes(nullptr)
 			, mProjectionMat() {
 			UpdateCoordAxes();
 		}
@@ -87,7 +87,6 @@ namespace cckit
 		float mYaw, mPitch;
 		float mMoveSpeed, mRotateSpeed, mZoomSpeed;
 
-		const GLshader* mpShader;
 		const GLshader* mpShaderOutline;
 		const GLshader* mpShaderCoordAxes;
 		glm::mat4 mProjectionMat;
@@ -97,10 +96,6 @@ namespace cckit
 	const float GLcamera::MOVE_SPEED = 1.0f;
 	const float GLcamera::ROTATE_SPEED = 1.0f;
 	const float GLcamera::ZOOM_SPEED = 1.0f;
-
-	void GLcamera::set_shader(const GLshader& _shader) {
-		mpShader = &_shader;
-	}
 
 	void GLcamera::set_shader_outline(const GLshader& _shader) {
 		mpShaderOutline = &_shader;
@@ -115,6 +110,8 @@ namespace cckit
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
+		if (!_obj.mpShader) return;
+
 		_obj.PrepareRenderStates([&_obj](glm::mat4& _mat) {
 			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
 		});
