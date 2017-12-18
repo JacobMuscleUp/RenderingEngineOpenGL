@@ -9,7 +9,7 @@
 #include "../RenderingEngineOpenGL/GLfactory.h"
 #include <iostream>
 
-#define CCKIT_BULL_SPAWN_TIME 3.0f
+#define CONFIG_BULL_SPAWN_TIME 3.0f
 
 namespace cckit
 {
@@ -21,15 +21,16 @@ namespace cckit
 		bull_spawner(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
-			
+			mSpawnTime = CONFIG_BULL_SPAWN_TIME;
+			mSpawnTimer = 0.0f;
 		}
 
 		void update(float _deltaTime) {
 			if ((mSpawnTimer += _deltaTime) > mSpawnTime) {
 				mSpawnTimer = 0.0f;
 				cckit::GLobj& bull = *cckit::GLfactory<cckit::GLobj>::generate();
-				bull.load_model("Resources/OBJ/bull/bull.obj");
 				bull.add_behavior(new cckit::bull);
+				bull.load_model("Resources/OBJ/bull/bull.obj");
 				bull.set_shader(*pShaderDiffuse);
 			}
 		}
@@ -39,6 +40,7 @@ namespace cckit
 		}
 	public:
 		float mSpawnTime;
+	private:
 		float mSpawnTimer;
 	};
 }

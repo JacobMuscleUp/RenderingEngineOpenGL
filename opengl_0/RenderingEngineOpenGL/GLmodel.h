@@ -1,6 +1,7 @@
 #ifndef CCKIT_GLMODEL_H
 #define CCKIT_GLMODEL_H
 
+#include <unordered_map>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -8,19 +9,26 @@
 #include "GLmesh.h"
 #include "GLutils.h"
 
+
 namespace cckit
 {
 	class GLmodel
 	{
 	public:
 		GLmodel(const std::string& _path) 
-		: mMeshes(), mLoadedTextures() {
+		: mPath(_path), mMeshes(), mLoadedTextures() {
 			Load(_path);
 		}
 
 		~GLmodel() {
-			for (auto pMesh : mMeshes)
-				delete pMesh;
+			size_t pathHash = mStringHash(mPath);
+			if (mPath2LoadedMeshesMap.count(pathHash) != 0)
+				for (auto pMesh : mPath2LoadedMeshesMap[pathHash])
+					delete pMesh;
+			mPath2LoadedMeshesMap.erase(pathHash);
+
+			/*for (auto pMesh : mMeshes)
+				delete pMesh;*/
 		}
 
 		void render(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
@@ -61,7 +69,24 @@ namespace cckit
 		}
 	private:
 		void Load(const std::string& _path) {
-			Assimp::Importer importer;
+			mDirectory = _path.substr(0, _path.find_last_of('/'));
+
+			size_t pathHash = mStringHash(_path);
+			if (mPath2LoadedMeshesMap.count(pathHash) == 0) {
+				Assimp::Importer importer;
+				const aiScene* pScene = importer.ReadFile(_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+				if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
+					std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << "\n";
+					return;
+				}
+				ProcessNode(pScene->mRootNode, pScene);
+				
+				mPath2LoadedMeshesMap[pathHash] = mMeshes;
+			}
+			else
+				mMeshes = mPath2LoadedMeshesMap[pathHash];
+			
+			/*Assimp::Importer importer;
 			const aiScene* pScene = importer.ReadFile(_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
 			if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
 				std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << "\n";
@@ -69,7 +94,7 @@ namespace cckit
 			}
 			mDirectory = _path.substr(0, _path.find_last_of('/'));
 
-			ProcessNode(pScene->mRootNode, pScene);
+			ProcessNode(pScene->mRootNode, pScene);*/
 		}
 
 		void ProcessNode(aiNode* _pNode, const aiScene* _pScene) {
@@ -151,10 +176,16 @@ namespace cckit
 		}
 	public:
 		std::vector<GLmesh*> mMeshes;
+		std::string mPath;
 		std::string mDirectory;
 	private:
 		std::vector<GLtexture> mLoadedTextures;
+
+		static std::unordered_map<size_t, std::vector<GLmesh*> > mPath2LoadedMeshesMap;
+		static std::hash<std::string> mStringHash;
 	};
+	std::unordered_map<size_t, std::vector<GLmesh*> > GLmodel::mPath2LoadedMeshesMap;
+	std::hash<std::string> GLmodel::mStringHash;
 }
 
 #endif // !CCKIT_GLMODEL_H

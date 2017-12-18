@@ -88,65 +88,127 @@ namespace glm
 		return glm::rotate(glm::mat4(), radAngle, rotateAxis);
 	}*/
 
+	template<typename T, precision P>
+	tmat4x4<T, P> lookAtRH(const tvec3<T, P>& _eyePos, const tvec3<T, P>& _targetPos) {
+		tvec3<T, P> zAxis = normalize(_eyePos - _targetPos);// OpenGL camera looks along the negative zAxis
+		tvec3<T, P> yAxis(0, 1, 0);
+		if (abs(zAxis.x)< FLT_EPSILON && abs(zAxis.z) < FLT_EPSILON)
+			yAxis = (zAxis.y < 0) ? tvec3<T, P>(0, 0, 1) : tvec3<T, P>(0, 0, -1);
+		tvec3<T, P> xAxis = normalize(cross(yAxis, zAxis));
+		yAxis = cross(zAxis, xAxis);
+
+		return
+			tmat4x4<T, P>(
+				xAxis.x, yAxis.x, zAxis.x, 0
+				, xAxis.y, yAxis.y, zAxis.y, 0
+				, xAxis.z, yAxis.z, zAxis.z, 0
+				, -dot(xAxis, _eyePos), -dot(yAxis, _eyePos), -dot(zAxis, _eyePos), 1
+			);
+		return
+			tmat4x4<T, P>(// from camera's local space(original basis) to camera's local space(lookat basis)
+				xAxis.x, yAxis.x, zAxis.x, 0
+				, xAxis.y, yAxis.y, zAxis.y, 0
+				, xAxis.z, yAxis.z, zAxis.z, 0
+				, 0, 0, 0, 1
+			) *// transpose of change of basis matrix
+			tmat4x4<T, P>(// from world space(original basis) to camera's local space(original basis)
+				1, 0, 0, 0
+				, 0, 1, 0, 0
+				, 0, 0, 1, 0
+				, -_eyePos.x, -_eyePos.y, -_eyePos.z, 1
+			);// inverse of translation matrix
+	}
+
+	template<typename T, precision P>
+	tmat4x4<T, P> lookAtLH(const tvec3<T, P>& _eyePos, const tvec3<T, P>& _targetPos) {
+		tvec3<T, P> zAxis = normalize(_eyePos - _targetPos);// OpenGL camera looks along the negative zAxis
+		tvec3<T, P> yAxis(0, 1, 0);
+		if (abs(zAxis.x)< FLT_EPSILON && abs(zAxis.z) < FLT_EPSILON)
+			yAxis = (zAxis.y < 0) ? tvec3<T, P>(0, 0, 1) : tvec3<T, P>(0, 0, -1);
+		tvec3<T, P> xAxis = normalize(cross(zAxis, yAxis));
+		yAxis = cross(xAxis, zAxis);
+
+		return
+			tmat4x4<T, P>(
+				xAxis.x, yAxis.x, zAxis.x, 0
+				, xAxis.y, yAxis.y, zAxis.y, 0
+				, xAxis.z, yAxis.z, zAxis.z, 0
+				, -dot(xAxis, _eyePos), -dot(yAxis, _eyePos), -dot(zAxis, _eyePos), 1
+			);
+		return
+			tmat4x4<T, P>(// from camera's local space(original basis) to camera's local space(lookat basis)
+				xAxis.x, yAxis.x, zAxis.x, 0
+				, xAxis.y, yAxis.y, zAxis.y, 0
+				, xAxis.z, yAxis.z, zAxis.z, 0
+				, 0, 0, 0, 1
+			) *// transpose of change of basis matrix
+			tmat4x4<T, P>(// from world space(original basis) to camera's local space(original basis)
+				1, 0, 0, 0
+				, 0, 1, 0, 0
+				, 0, 0, 1, 0
+				, -_eyePos.x, -_eyePos.y, -_eyePos.z, 1
+			);// inverse of translation matrix
+	}
+
 	enum class facing_mode { forward, back, left, right, bottom, top, Count };
 
 	template <typename T, precision P>
-	GLM_FUNC_DECL glm::tmat4x4<T, P> lookAt(
-		const glm::tvec3<T, P>& _eyePos
-		, const glm::tvec3<T, P>& _targetPos
-		, facing_mode _facingMode)
-	{
-		glm::vec3 targetDir(glm::normalize(_targetPos - _eyePos));
-		glm::vec3 up(0, 1, 0);
-		if (abs(targetDir.x)< FLT_EPSILON && abs(targetDir.z) < FLT_EPSILON) 
-			up = (targetDir.y < 0) ? glm::vec3(0, 0, 1) : glm::vec3(0, 0, -1);
-		glm::vec3 right = glm::normalize(glm::cross(up, targetDir));
-		up = glm::cross(targetDir, right);// since targetDir is perpendicular to right
+	tmat4x4<T, P> lookAt(
+		const tvec3<T, P>& _eyePos
+		, const tvec3<T, P>& _targetPos
+		, facing_mode _facingMode
+	) {
+		tvec3<T, P> zAxis = normalize(_targetPos - _eyePos);
+		tvec3<T, P> yAxis(0, 1, 0);
+		if (abs(zAxis.x)< FLT_EPSILON && abs(zAxis.z) < FLT_EPSILON) 
+			yAxis = (zAxis.y < 0) ? tvec3<T, P>(0, 0, 1) : tvec3<T, P>(0, 0, -1);
+		tvec3<T, P> xAxis = normalize(cross(yAxis, zAxis));
+		yAxis = cross(zAxis, xAxis);// since zAxis is perpendicular to xAxis
 
 		switch (_facingMode) {
 		case facing_mode::forward:
-			return glm::mat4(
-				right.x, right.y, right.z, 0,
-				up.x, up.y, up.z, 0,
-				targetDir.x, targetDir.y, targetDir.z, 0,
+			return tmat4x4<T, P>(
+				xAxis.x, xAxis.y, xAxis.z, 0,
+				yAxis.x, yAxis.y, yAxis.z, 0,
+				zAxis.x, zAxis.y, zAxis.z, 0,
 				0, 0, 0, 1
 			);
 		case facing_mode::back:
-			return glm::mat4(
-				right.x, right.y, right.z, 0,
-				up.x, up.y, up.z, 0,
-				-targetDir.x, -targetDir.y, -targetDir.z, 0,
+			return tmat4x4<T, P>(
+				xAxis.x, xAxis.y, xAxis.z, 0,
+				yAxis.x, yAxis.y, yAxis.z, 0,
+				-zAxis.x, -zAxis.y, -zAxis.z, 0,
 				0, 0, 0, 1
 			);
 		case facing_mode::right:
-			return glm::mat4(
-				targetDir.x, targetDir.y, targetDir.z, 0
-				, up.x, up.y, up.z, 0
-				, right.x, right.y, right.z, 0
+			return tmat4x4<T, P>(
+				zAxis.x, zAxis.y, zAxis.z, 0
+				, yAxis.x, yAxis.y, yAxis.z, 0
+				, xAxis.x, xAxis.y, xAxis.z, 0
 				, 0, 0, 0, 1
 			);
 		case facing_mode::left:
-			return glm::mat4(
-				targetDir.x, targetDir.y, targetDir.z, 0
-				, up.x, up.y, up.z, 0
-				, -right.x, -right.y, -right.z, 0
+			return tmat4x4<T, P>(
+				zAxis.x, zAxis.y, zAxis.z, 0
+				, yAxis.x, yAxis.y, yAxis.z, 0
+				, -xAxis.x, -xAxis.y, -xAxis.z, 0
 				, 0, 0, 0, 1
 			);
 		case facing_mode::top:
-			return glm::mat4(
-				up.x, up.y, up.z, 0
-				, targetDir.x, targetDir.y, targetDir.z, 0
-				, right.x, right.y, right.z, 0
+			return tmat4x4<T, P>(
+				yAxis.x, yAxis.y, yAxis.z, 0
+				, zAxis.x, zAxis.y, zAxis.z, 0
+				, xAxis.x, xAxis.y, xAxis.z, 0
 				, 0, 0, 0, 1
 			);
 		case facing_mode::bottom:// FIX NEEDED
-			return glm::mat4(
-				-up.x, -up.y, -up.z, 0
-				, targetDir.x, targetDir.y, targetDir.z, 0
-				, right.x, right.y, right.z, 0
+			return tmat4x4<T, P>(
+				-yAxis.x, -yAxis.y, -yAxis.z, 0
+				, zAxis.x, zAxis.y, zAxis.z, 0
+				, xAxis.x, xAxis.y, xAxis.z, 0
 				, 0, 0, 0, 1
 			);
-			return glm::mat4();
+			return tmat4x4<T, P>();
 		}
 	}
 }

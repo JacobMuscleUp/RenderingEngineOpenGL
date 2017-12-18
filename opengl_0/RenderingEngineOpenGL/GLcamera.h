@@ -13,6 +13,7 @@
 #include "GLshader.h"
 #include "GLutils.h"
 #include "GLobj.h"
+#include "GLmatrixTransform.h"
 
 namespace cckit
 {
@@ -38,6 +39,7 @@ namespace cckit
 		}
 
 		glm::mat4 get_view_matrix() const {
+			return glm::lookAtRH(mPos, mPos + mForward);
 			return glm::lookAt(mPos, mPos + mForward, mUp);
 		}
 
@@ -60,7 +62,6 @@ namespace cckit
 			UpdateCoordAxes();
 		}
 
-		void set_shader(const GLshader& _shader);
 		void set_shader_outline(const GLshader& _shader);
 		void set_shader_coord_axes(const GLshader& _shader);
 		void set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far);
@@ -110,7 +111,7 @@ namespace cckit
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
-		if (!_obj.mpShader) return;
+		if (!_obj.mpShader || !_obj.behaviors_started()) return;
 
 		_obj.PrepareRenderStates([&_obj](glm::mat4& _mat) {
 			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));

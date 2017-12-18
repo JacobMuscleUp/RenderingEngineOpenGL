@@ -13,7 +13,7 @@
 #define DEFAULT_OUTLINE_SCALE 1.02f
 
 #define FORWARD_AXIS glm::vec3(0, 0, 1)
-#define RIGHT_AXIS glm::vec3(-1, 0, 0)
+#define RIGHT_AXIS glm::vec3(1, 0, 0)
 #define UP_AXIS glm::vec3(0, 1, 0)
 
 #define FORWARD_AXIS_COLOR  glm::vec3(1, 0, 0)
@@ -63,6 +63,7 @@ namespace cckit
 		void clear_behaviors();
 		void start_behaviors() const;
 		void update_behaviors(float _deltaTime) const;
+		bool behaviors_started() const { return mbBehaviorsStarted; }
 
 		template<typename BehaviorType>
 		BehaviorType* get_behavior() const;
@@ -115,6 +116,7 @@ namespace cckit
 		mutable GLfloat mCoordAxes1D[54];// 6:3:3 <=> vertAttribs : verts : coordAxes
 
 		std::unordered_set<GLbehavior*> mBehaviors;
+		mutable bool mbBehaviorsStarted;
 
 		static std::unordered_set<const GLobj*> mObjs;
 
@@ -138,7 +140,7 @@ namespace cckit
 		, mbOutlined(false), mbCoordAxesDrawn(false)
 		, mOutlineColor(M_DEFAULT_OUTLINE_COLOR)
 		, mTranslateFunc([](glm::mat4&) {}), mRotateFunc([](glm::mat4&) {}), mScaleFunc([](glm::mat4&) {})
-		, mBehaviors()
+		, mBehaviors(), mbBehaviorsStarted(false)
 	{
 		::new(&mAxisColors[0]) glm::vec3(FORWARD_AXIS_COLOR);
 		::new(&mAxisColors[1]) glm::vec3(RIGHT_AXIS_COLOR);
@@ -229,8 +231,18 @@ namespace cckit
 	}
 
 	inline void GLobj::update_behaviors(float _deltaTime) const {
-		for (auto pBehavior : mBehaviors)
-			pBehavior->update(_deltaTime);
+		if (mbBehaviorsStarted) {
+			for (auto pBehavior : mBehaviors)
+				pBehavior->update(_deltaTime);
+		}
+		else {
+			mbBehaviorsStarted = true;
+			for (auto pBehavior : mBehaviors) {
+				pBehavior->update(_deltaTime);
+				if (!pBehavior->started())
+					mbBehaviorsStarted = false;
+			}
+		}
 	}
 
 	template<typename BehaviorType>
@@ -261,6 +273,7 @@ namespace cckit
 		rotateMat = glm::rotate(rotateMat, glm::radians(mRotation.z), glm::vec3(0, 0, 1));
 		if (mbFacingTarget) {
 			mbFacingTarget = false;
+			//rotateMat = glm::lookAtRH(glm::vec3(0), mTargetPos - mPosition);
 			rotateMat = glm::lookAt(mPosition, mTargetPos, mFacingMode);
 		}
 		mModelMat *= rotateMat;
@@ -285,7 +298,8 @@ namespace cckit
 
 	inline void GLobj::RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 		, const GLshader* _pShaderOutline, std::function<void(const GLshader&)> _uniformConfigOutline) const {
-		mpModel->render(_shader, _uniformConfig, _pShaderOutline, _uniformConfigOutline, mbOutlined);
+		if (mpModel)
+			mpModel->render(_shader, _uniformConfig, _pShaderOutline, _uniformConfigOutline, mbOutlined);
 	}
 
 	void GLobj::RenderCoordAxes(const GLshader& _shader

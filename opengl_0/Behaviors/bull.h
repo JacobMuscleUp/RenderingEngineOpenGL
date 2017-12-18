@@ -8,6 +8,8 @@
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
 #include <iostream>
 
+#define CONFIG_BULL_MOVE_SPEED 0.22f
+
 namespace cckit
 {
 	class bull : public GLbehavior
@@ -27,6 +29,8 @@ namespace cckit
 			mpObj->set_position(glm::vec3(0, 0, -1));
 			mpObj->mRotation = glm::vec3(0, 270, 0);
 			mpObj->mScale = glm::vec3(0.1f);
+
+			mMoveSpeed = CONFIG_BULL_MOVE_SPEED;
 		}
 
 		void update(float _deltaTime) {
@@ -34,12 +38,18 @@ namespace cckit
 				_modelMat = glm::rotate(_modelMat, glm::radians((float)glfwGetTime() * 20), glm::vec3(0, 1, 0));
 			};
 			mpObj->face(camera.pos(), glm::facing_mode::forward);
-			mpObj->set_position(mpObj->position() + mpObj->forward() * _deltaTime * 0.5f);
+			mpObj->set_position(mpObj->position() + mpObj->forward() * _deltaTime * mMoveSpeed);
+
+			if (glm::length(obj().position() - camera.pos()) < 0.4f) {
+				//obj().destroy();
+			}
 		}
 
 		void on_destroyed() {
 			std::cout << "bull destroyed" << "\n";
 		}
+	public:
+		float mMoveSpeed;
 	};
 }
 

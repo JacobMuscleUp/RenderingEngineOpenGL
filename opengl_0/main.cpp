@@ -485,17 +485,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 	lamp.add_behavior(new cckit::lamp([](cckit::lamp& _behavior) {
 		_behavior.mStartingPos = ptLights[0].mPos;
 	}));
-	bullSpawner.add_behavior(new cckit::bull_spawner([](cckit::bull_spawner& _behavior) {
-		_behavior.mSpawnTime = CCKIT_BULL_SPAWN_TIME;
-		_behavior.mSpawnTimer = 0.0f;
-	}));
+	bullSpawner.add_behavior(new cckit::bull_spawner);
 	cckit::lamp& lampBehavior = *lamp.get_behavior<cckit::lamp>();
-
-	/*bull.destroy();/////////////////////
-
-	bull = *new cckit::GLobj("Resources/OBJ/bull/bull.obj");
-	bull.set_shader(shaderDiffuse);
-	bull.add_behavior(new cckit::bull);*/
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
