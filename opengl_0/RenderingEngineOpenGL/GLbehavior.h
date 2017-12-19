@@ -5,25 +5,28 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "GLbase.h"
 
 namespace cckit
 {
 	class GLobj;
 
-	class GLbehavior
+	class GLbehavior : public GLbase
 	{
 	public:
-		GLbehavior() : mbStarted(false), mbAborted(false) {}
+		GLbehavior() : mbStarted(false), mbDestroyed(false) {}
 		void manage() { if (!mbStarted) { mbStarted = true; } }
 		virtual void start() {}
 		virtual void update(float _deltaTime) {}
 		virtual void on_destroyed() {}
+
+		void destroy() { mbDestroyed = true; }
 		GLobj& obj() const { return *mpObj; }
 		bool started() const { return mbStarted; }
 	protected:
 		GLobj* mpObj;
 		bool mbStarted;
-		bool mbAborted;
+		bool mbDestroyed;
 
 		friend GLobj;
 	};

@@ -4,8 +4,9 @@
 #include <GLFW/glfw3.h>
 #include "../RenderingEngineOpenGL/GLobj.h"
 #include "../RenderingEngineOpenGL/GLbehavior.h"
-#include "../global.h"
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
+#include "../RenderingEngineOpenGL/GLutils.h"
+#include "../global.h"
 #include <iostream>
 
 namespace cckit
@@ -35,9 +36,10 @@ namespace cckit
 			};
 			mpObj->face(camera.pos(), glm::facing_mode::forward);
 			mpObj->set_position(mpObj->position() + mpObj->forward() * _deltaTime * mMoveSpeed);
-
-			if (glm::length(obj().position() - camera.pos()) < 0.4f) {
-				//obj().destroy();
+			
+			if (glm::length(obj().position() - camera.pos()) < 0.3f) {
+				cckit::destroy(*this);
+				//cckit::destroy(obj());
 			}
 		}
 

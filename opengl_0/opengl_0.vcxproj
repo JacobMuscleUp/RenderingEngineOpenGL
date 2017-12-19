@@ -136,6 +136,7 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="Prefabs\prefabs.h" />
     <ClInclude Include="Prefabs\PrefabBull.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLbase.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />

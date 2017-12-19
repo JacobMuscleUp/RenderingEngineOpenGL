@@ -34,7 +34,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mainBackup.cpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="Prefabs\PrefabBull.h">
       <Filter>Header Files\Prefabs</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLbase.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

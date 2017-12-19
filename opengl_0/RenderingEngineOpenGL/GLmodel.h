@@ -18,7 +18,7 @@ namespace cckit
 	public:
 		GLmodel(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config
 			= [](std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&) {})
-			: mMeshes(), mLoadedTextures(), mbImported(false) {
+			: mMeshes(), mbImported(false) {
 			std::vector<GLvertex> vertices;
 			std::vector<GLuint> indices;
 			std::vector<GLtexture> textures;
@@ -26,48 +26,43 @@ namespace cckit
 			mMeshes.push_back(new GLmesh(vertices, indices, textures));
 		}
 		GLmodel(const std::string& _path) 
-		: mPath(_path), mMeshes(), mLoadedTextures(), mbImported(true) {
+		: mPath(_path), mMeshes(), mbImported(true) {
 			Load(_path);
 		}
-		~GLmodel();
+		~GLmodel() {
+			if (!mbImported)
+				for (auto pMesh : mMeshes)
+					delete pMesh;
+		}
 
 		void render(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 			, const GLshader* _pShaderOutline = nullptr
 			, std::function<void(const GLshader&)> _uniformConfigOutline = [](const GLshader&) {}
 			, bool _bOutlined = false);
+
+		static void load(const std::string& _path);
+		static void unload();
 	private:
 		void Load(const std::string& _path);
-		void ProcessNode(aiNode* _pNode, const aiScene* _pScene);
-		GLmesh* ProcessMesh(aiMesh* _pMesh, const aiScene* _pScene);
-		std::vector<GLtexture> LoadMaterialTextures(aiMaterial* _mat, aiTextureType _textureType, const std::string& _typeName);
+
+		static void ProcessNode(aiNode* _pNode, const aiScene* _pScene, std::vector<GLmesh*>& _meshes);
+		static GLmesh* ProcessMesh(aiMesh* _pMesh, const aiScene* _pScene);
+		static std::vector<GLtexture> LoadMaterialTextures(aiMaterial* _mat, aiTextureType _textureType, const std::string& _typeName);
 	public:
 		std::vector<GLmesh*> mMeshes;
 		std::string mPath;
-		std::string mDirectory;
 	private:
-		std::vector<GLtexture> mLoadedTextures;
 		bool mbImported;
 
-		static std::unordered_map<size_t, std::vector<GLmesh*> > mPath2LoadedMeshesMap;
+		static std::string mDirectory;
+		static std::vector<GLtexture> mLoadedTextures;
+		static std::unordered_map<size_t, std::vector<GLmesh*> > mMapHashedPath2LoadedMeshes;
 		static std::hash<std::string> mStringHash;
 	};
-	std::unordered_map<size_t, std::vector<GLmesh*> > GLmodel::mPath2LoadedMeshesMap;
+	std::string GLmodel::mDirectory;
+	std::vector<GLtexture> GLmodel::mLoadedTextures;
+	std::unordered_map<size_t, std::vector<GLmesh*> > GLmodel::mMapHashedPath2LoadedMeshes;
 	std::hash<std::string> GLmodel::mStringHash;
-
-	GLmodel::~GLmodel() {
-		if (mbImported) {
-			size_t pathHash = mStringHash(mPath);
-			if (mPath2LoadedMeshesMap.count(pathHash) != 0) {
-				for (auto pMesh : mPath2LoadedMeshesMap[pathHash])
-					delete pMesh;
-				mPath2LoadedMeshesMap.erase(pathHash);
-			}
-		}
-		else {
-			for (auto pMesh : mMeshes)
-				delete pMesh;
-		}
-	}
 
 	void GLmodel::render(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 		, const GLshader* _pShaderOutline, std::function<void(const GLshader&)> _uniformConfigOutline
@@ -105,42 +100,58 @@ namespace cckit
 		glDisable(GL_CULL_FACE);
 	}
 
-	void GLmodel::Load(const std::string& _path) {
+	void GLmodel::load(const std::string& _path) {
 		mDirectory = _path.substr(0, _path.find_last_of('/'));
+		size_t hashedPath = mStringHash(_path);
 
-		size_t pathHash = mStringHash(_path);
-		if (mPath2LoadedMeshesMap.count(pathHash) == 0) {
+		if (mMapHashedPath2LoadedMeshes.count(hashedPath) == 0) {
 			Assimp::Importer importer;
 			const aiScene* pScene = importer.ReadFile(_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
 			if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
 				std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << "\n";
 				return;
 			}
-			ProcessNode(pScene->mRootNode, pScene);
+			std::vector<GLmesh*> meshes;
+			ProcessNode(pScene->mRootNode, pScene, meshes);
 
-			mPath2LoadedMeshesMap[pathHash] = mMeshes;
+			mMapHashedPath2LoadedMeshes[hashedPath] = meshes;
 		}
-		else
-			mMeshes = mPath2LoadedMeshesMap[pathHash];
-
-		/*Assimp::Importer importer;
-		const aiScene* pScene = importer.ReadFile(_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
-		if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
-		std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << "\n";
-		return;
-		}
-		mDirectory = _path.substr(0, _path.find_last_of('/'));
-
-		ProcessNode(pScene->mRootNode, pScene);*/
 	}
 
-	inline void GLmodel::ProcessNode(aiNode* _pNode, const aiScene* _pScene) {
+	void GLmodel::unload() {
+		for (auto pairHash2Meshes : mMapHashedPath2LoadedMeshes) {
+			for (auto pMesh : pairHash2Meshes.second)
+				delete pMesh;
+		}
+		mMapHashedPath2LoadedMeshes.clear();
+	}
+
+	void GLmodel::Load(const std::string& _path) {
+		mDirectory = _path.substr(0, _path.find_last_of('/'));
+		size_t hashedPath = mStringHash(_path);
+
+		if (mMapHashedPath2LoadedMeshes.count(hashedPath) == 0) {
+			Assimp::Importer importer;
+			const aiScene* pScene = importer.ReadFile(_path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+			if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
+				std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << "\n";
+				return;
+			}
+			ProcessNode(pScene->mRootNode, pScene, mMeshes);
+			
+			mMapHashedPath2LoadedMeshes[hashedPath] = mMeshes;
+		}
+		else
+			mMeshes = mMapHashedPath2LoadedMeshes[hashedPath];
+	}
+
+	inline void GLmodel::ProcessNode(aiNode* _pNode, const aiScene* _pScene, std::vector<GLmesh*>& _meshes) {
 		for (size_t i = 0; i < _pNode->mNumMeshes; ++i) {
 			aiMesh* pMesh = _pScene->mMeshes[_pNode->mMeshes[i]];
-			mMeshes.push_back(ProcessMesh(pMesh, _pScene));
+			_meshes.push_back(ProcessMesh(pMesh, _pScene));
 		}
 		for (size_t i = 0; i < _pNode->mNumChildren; ++i) {
-			ProcessNode(_pNode->mChildren[i], _pScene);
+			ProcessNode(_pNode->mChildren[i], _pScene, _meshes);
 		}
 	}
 

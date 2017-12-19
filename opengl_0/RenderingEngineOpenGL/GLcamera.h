@@ -111,8 +111,8 @@ namespace cckit
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
-		if (!_obj.mpShader || !_obj.behaviors_started()) return;
-
+		if (!_obj.mpShader || !_obj.behaviors_started() || _obj.destroyed()) return;
+		
 		_obj.PrepareRenderStates([&_obj](glm::mat4& _mat) {
 			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
 		});

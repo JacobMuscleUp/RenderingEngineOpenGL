@@ -112,7 +112,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 	cckit::GLfactory<cckit::GLobj> objFactory;
 	cckit::GLobj& spider = *cckit::GLfactory<cckit::GLobj>::generate();
-	cckit::GLobj& bull = *cckit::GLfactory<cckit::GLobj>::generate();
+	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
+	//cckit::GLobj& bull = *cckit::GLfactory<cckit::GLobj>::generate();
 	cckit::GLobj& lamp = *cckit::GLfactory<cckit::GLobj>::generate();
 	cckit::GLobj& bullSpawner = *cckit::GLfactory<cckit::GLobj>::generate();
 	spider.load_model("Resources/OBJ/spider/spider.obj");
@@ -228,19 +229,20 @@ void fps_assimp(GLFWwindow* _pWindow)
 		};
 		pShaderLamp->mShaderConfig = pShaderTexture->mShaderConfig;
 
-		for (auto pObj : cckit::GLobj::Objs())
-			pObj->start_behaviors();// start
-
-		for (auto pObj : cckit::GLobj::Objs())
-			pObj->update_behaviors(deltaTime);// update
-		
-		camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-		camera.set_shader_outline(*pShaderOutline);
-		camera.set_shader_coord_axes(*pShaderCoordAxes);
-		
-		for (auto pObj : cckit::GLobj::Objs())
-			camera.render(*pObj);// render
+		cckit::GLobj::globally_start_behaviors();
+		cckit::GLobj::globally_update_behaviors(deltaTime);
+		cckit::GLobj::globally_render(&camera
+			, [](cckit::GLcamera& _camera) {
+			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_shader_outline(*pShaderOutline);
+			_camera.set_shader_coord_axes(*pShaderCoordAxes);
+		}
+			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+			_camera.render(_obj);
+		});
 	}
+
+	cckit::GLmodel::unload();
 }
 
 void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime, cckit::BehaviorLamp& _lampBehavior)

@@ -3,8 +3,11 @@
 
 #include <cfloat>
 #include <unordered_set>
+#include <stack>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "GLbase.h"
+#include "GLfactory.h"
 #include "GLmodel.h"
 #include "GLbehavior.h"
 #include "GLlight.h"
@@ -25,10 +28,8 @@
 namespace cckit
 {
 	class GLcamera;
-	template<typename ObjType>
-	class GLfactory;
 
-	class GLobj
+	class GLobj : public GLbase
 	{
 	private:
 		static glm::vec3 M_FORWARD_AXIS;
@@ -60,17 +61,25 @@ namespace cckit
 		const glm::vec3& up() const { return mUp; }
 
 		bool add_behavior(GLbehavior* _pBehavior);
+		bool remove_behavior(GLbehavior* _pBehavior);
 		void clear_behaviors();
-		void start_behaviors() const;
-		void update_behaviors(float _deltaTime) const;
+		void start_behaviors();
+		void update_behaviors(float _deltaTime);
 		bool behaviors_started() const { return mbBehaviorsStarted; }
+		bool destroyed() const { return mbDestroyed; }
 
 		template<typename BehaviorType>
 		BehaviorType* get_behavior() const;
 
-		void destroy() { delete this; }
+		void destroy() { mbDestroyed = true; }
 
-		static const std::unordered_set<const GLobj*>& Objs() { return mObjs; }
+		// invocation sequence: globally_start_behaviors => globally_update_behaviors => globally_render
+		static void globally_start_behaviors();
+		static void globally_update_behaviors(float _deltaTime);
+		static void globally_render(GLcamera* _pCamera
+			, std::function<void(GLcamera&)> _cameraConfig, std::function<void(GLcamera&, const GLobj&)> _cameraRender);
+
+		static const std::unordered_set<GLobj*>& Objs() { return mObjs; }
 	private:
 		void PrepareRenderStates(std::function<void(glm::mat4&)> _outlineModelMatConfig) const;
 		void RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
@@ -117,8 +126,9 @@ namespace cckit
 
 		std::unordered_set<GLbehavior*> mBehaviors;
 		mutable bool mbBehaviorsStarted;
+		bool mbDestroyed;
 
-		static std::unordered_set<const GLobj*> mObjs;
+		static std::unordered_set<GLobj*> mObjs;
 
 		friend GLcamera;
 		friend GLfactory<GLobj>;
@@ -127,7 +137,7 @@ namespace cckit
 	glm::vec3 GLobj::M_RIGHT_AXIS = RIGHT_AXIS;
 	glm::vec3 GLobj::M_UP_AXIS = UP_AXIS;
 	glm::vec3 GLobj::M_DEFAULT_OUTLINE_COLOR = DEFAULT_OUTLINE_COLOR;
-	std::unordered_set<const GLobj*> GLobj::mObjs = std::unordered_set<const GLobj*>();
+	std::unordered_set<GLobj*> GLobj::mObjs;
 
 	inline GLobj::GLobj()
 		: mpModel(nullptr), mbFacingTarget(false), mModelMat()
@@ -140,7 +150,7 @@ namespace cckit
 		, mbOutlined(false), mbCoordAxesDrawn(false)
 		, mOutlineColor(M_DEFAULT_OUTLINE_COLOR)
 		, mTranslateFunc([](glm::mat4&) {}), mRotateFunc([](glm::mat4&) {}), mScaleFunc([](glm::mat4&) {})
-		, mBehaviors(), mbBehaviorsStarted(false)
+		, mBehaviors(), mbBehaviorsStarted(false), mbDestroyed(false)
 	{
 		::new(&mAxisColors[0]) glm::vec3(FORWARD_AXIS_COLOR);
 		::new(&mAxisColors[1]) glm::vec3(RIGHT_AXIS_COLOR);
@@ -218,11 +228,17 @@ namespace cckit
 		return mBehaviors.insert(_pBehavior).second;
 	}
 
+	inline bool GLobj::remove_behavior(GLbehavior* _pBehavior) {
+		size_t removedBehaviors = mBehaviors.erase(_pBehavior);
+		delete _pBehavior;
+		return removedBehaviors != 0;
+	}
+
 	inline void GLobj::clear_behaviors() {
 		mBehaviors.clear();
 	}
 
-	inline void GLobj::start_behaviors() const {
+	inline void GLobj::start_behaviors() {
 		for (auto pBehavior : mBehaviors) {
 			if (!pBehavior->started())
 				pBehavior->start();
@@ -230,18 +246,38 @@ namespace cckit
 		}
 	}
 
-	inline void GLobj::update_behaviors(float _deltaTime) const {
+	void GLobj::update_behaviors(float _deltaTime) {
+		//if (mbDestroyed)
+		//	return;
+
 		if (mbBehaviorsStarted) {
-			for (auto pBehavior : mBehaviors)
+			std::stack<GLbehavior*> removedBehaviors;
+			for (auto pBehavior : mBehaviors) {
 				pBehavior->update(_deltaTime);
+				if (mbDestroyed) 
+					break;
+				if (pBehavior->mbDestroyed)
+					removedBehaviors.push(pBehavior);
+			}
+			while (!removedBehaviors.empty()) {
+				remove_behavior(removedBehaviors.top());
+				removedBehaviors.pop();
+			}
 		}
 		else {
 			mbBehaviorsStarted = true;
 			for (auto pBehavior : mBehaviors) {
 				pBehavior->update(_deltaTime);
+				if (mbDestroyed)
+					break;
 				if (!pBehavior->started())
 					mbBehaviorsStarted = false;
 			}
+		}
+
+		if (mbDestroyed) {
+			mObjs.erase(this);
+			GLfactory<GLobj>::destroy(this);
 		}
 	}
 
@@ -253,6 +289,31 @@ namespace cckit
 				return pCastBehavior;
 		}
 		return nullptr;
+	}
+
+	void GLobj::globally_start_behaviors() {
+		for (auto pObj : cckit::GLobj::Objs())
+			pObj->start_behaviors();
+	}
+
+	void GLobj::globally_update_behaviors(float _deltaTime) {
+		for (bool bNoObjDestroyed = false; !bNoObjDestroyed;) {
+			bNoObjDestroyed = true;
+			for (auto pObj : cckit::GLobj::Objs()) {
+				pObj->update_behaviors(_deltaTime);
+				if (pObj->destroyed()) {
+					bNoObjDestroyed = false;
+					break;
+				}
+			}
+		}
+	}
+
+	void GLobj::globally_render(GLcamera* _pCamera
+		, std::function<void(GLcamera&)> _cameraConfig, std::function<void(GLcamera&, const GLobj&)> _cameraRender) {
+		_cameraConfig(*_pCamera);
+		for (auto pObj : cckit::GLobj::Objs())
+			_cameraRender(*_pCamera, *pObj);
 	}
 
 	void GLobj::PrepareRenderStates(std::function<void(glm::mat4&)> _outlineModelMatConfig) const {

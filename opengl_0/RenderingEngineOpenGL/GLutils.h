@@ -2,6 +2,7 @@
 #define CCKIT_UTILS_H
 
 #include <glad/glad.h>
+#include "GLbase.h"
 
 namespace cckit
 {
@@ -60,6 +61,10 @@ namespace cckit
 		stbi_image_free(data);
 
 		return textureHandle;
+	}
+
+	void destroy(const GLbase& _base) {
+		(const_cast<GLbase&>(_base)).destroy();
 	}
 }
 
