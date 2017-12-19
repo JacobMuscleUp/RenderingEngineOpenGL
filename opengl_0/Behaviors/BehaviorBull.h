@@ -8,16 +8,14 @@
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
 #include <iostream>
 
-#define CONFIG_BULL_MOVE_SPEED 0.22f
-
 namespace cckit
 {
-	class bull : public GLbehavior
+	class BehaviorBull : public GLbehavior
 	{
 	private:
-		typedef bull this_type;
+		typedef BehaviorBull this_type;
 	public:
-		bull(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
+		BehaviorBull(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
 			mpObj->mlocalRotation = glm::vec3(0, 180, 0);
@@ -29,8 +27,6 @@ namespace cckit
 			mpObj->set_position(glm::vec3(0, 0, -1));
 			mpObj->mRotation = glm::vec3(0, 270, 0);
 			mpObj->mScale = glm::vec3(0.1f);
-
-			mMoveSpeed = CONFIG_BULL_MOVE_SPEED;
 		}
 
 		void update(float _deltaTime) {

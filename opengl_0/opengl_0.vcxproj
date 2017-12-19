@@ -124,15 +124,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\OpenGL Extension ESSENTIAL\OpenGl Library\src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mainBackup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="afx_config.h" />
-    <ClInclude Include="Behaviors\all_behaviors.h" />
-    <ClInclude Include="Behaviors\bull.h" />
-    <ClInclude Include="Behaviors\bull_spawner.h" />
-    <ClInclude Include="Behaviors\lamp.h" />
-    <ClInclude Include="Behaviors\spider.h" />
+    <ClInclude Include="Behaviors\behaviors.h" />
+    <ClInclude Include="Behaviors\BehaviorBull.h" />
+    <ClInclude Include="Behaviors\BehaviorBullSpawner.h" />
+    <ClInclude Include="Behaviors\BehaviorLamp.h" />
+    <ClInclude Include="Behaviors\BehaviorSpider.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="Prefabs\prefabs.h" />
+    <ClInclude Include="Prefabs\PrefabBull.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />
@@ -145,6 +148,8 @@
     <ClInclude Include="RenderingEngineOpenGL\GLutils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\shaderFramebuffer.fs" />
+    <None Include="Shaders\shaderFramebuffer.vs" />
     <None Include="Shaders\shaderMonoColor0.fs" />
     <None Include="Shaders\shaderMonoColor0.vs" />
     <None Include="Shaders\shaderLamp.fs" />

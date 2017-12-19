@@ -13,7 +13,7 @@ namespace cckit
 	class GLbehavior
 	{
 	public:
-		GLbehavior() : mbStarted(false) {}
+		GLbehavior() : mbStarted(false), mbAborted(false) {}
 		void manage() { if (!mbStarted) { mbStarted = true; } }
 		virtual void start() {}
 		virtual void update(float _deltaTime) {}
@@ -23,6 +23,7 @@ namespace cckit
 	protected:
 		GLobj* mpObj;
 		bool mbStarted;
+		bool mbAborted;
 
 		friend GLobj;
 	};

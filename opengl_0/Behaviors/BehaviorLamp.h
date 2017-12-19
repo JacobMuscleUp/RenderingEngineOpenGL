@@ -7,12 +7,12 @@
 
 namespace cckit
 {
-	class lamp : public GLbehavior
+	class BehaviorLamp : public GLbehavior
 	{
 	private:
-		typedef lamp this_type;
+		typedef BehaviorLamp this_type;
 	public:
-		lamp(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
+		BehaviorLamp(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
 			mpObj->set_position(mStartingPos);

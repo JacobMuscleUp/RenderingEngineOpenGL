@@ -7,12 +7,12 @@
 
 namespace cckit
 {
-	class spider : public GLbehavior
+	class BehaviorSpider : public GLbehavior
 	{
 	private:
-		typedef spider this_type;
+		typedef BehaviorSpider this_type;
 	public:
-		spider(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
+		BehaviorSpider(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
 			mpObj->mlocalRotation = glm::vec3(0, 90, 0);

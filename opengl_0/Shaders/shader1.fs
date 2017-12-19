@@ -44,7 +44,7 @@ in vec3 normal;
 
 out vec4 fragColor;
 
-uniform Material material1;
+uniform Material material;
 uniform DirectionalLight dirLight;
 uniform PointLight ptLight;
 uniform SpotLight spotLight;
@@ -61,14 +61,14 @@ vec3 Reflect(vec3 _incident, vec3 _normal) {
 
 vec3 CalculateDirectionalLight(vec3 _viewDir) {
     // ambient
-    vec3 ambient = dirLight.ambient * material1.diffuse;
+    vec3 ambient = dirLight.ambient * material.diffuse;
     // diffuse
     float diffuseScale = max(0.0, dot(-dirLight.dir, normal));
-    vec3 diffuse = diffuseScale * dirLight.diffuse * material1.diffuse;
+    vec3 diffuse = diffuseScale * dirLight.diffuse * material.diffuse;
     // specular
     vec3 unitReflected = normalize(Reflect(dirLight.dir, normal));
-    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material1.shininess);
-    vec3 specular = specularScale * dirLight.specular * material1.specular;
+    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
+    vec3 specular = specularScale * dirLight.specular * material.specular;
 
     return ambient + diffuse + specular;
 }
@@ -78,14 +78,14 @@ vec3 CalculatePointLight(vec3 _viewDir) {
         , unitLightDir = normalize(lightDir);
 
     // ambient
-    vec3 ambient = ptLight.ambient * material1.diffuse;
+    vec3 ambient = ptLight.ambient * material.diffuse;
     // diffuse
     float diffuseScale = max(0.0, dot(unitLightDir, normal));
-    vec3 diffuse = diffuseScale * ptLight.diffuse * material1.diffuse;
+    vec3 diffuse = diffuseScale * ptLight.diffuse * material.diffuse;
     // specular
     vec3 unitReflected = reflect(-unitLightDir, normal);
-    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material1.shininess);
-    vec3 specular = specularScale * ptLight.specular * material1.specular;
+    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
+    vec3 specular = specularScale * ptLight.specular * material.specular;
     // attenuation
     float attenuation = 1.0 / (Sq(lightDir.x) + Sq(lightDir.y) + Sq(lightDir.z));
     //float dist = length(lightDir);
@@ -102,14 +102,14 @@ vec3 CalculateSpotLight(vec3 _viewDir) {
         , unitLightDir = normalize(lightDir);
 
     // ambient
-    vec3 ambient = ptLight.ambient * material1.diffuse;
+    vec3 ambient = ptLight.ambient * material.diffuse;
     // diffuse
     float diffuseScale = max(0.0, dot(unitLightDir, normal));
-    vec3 diffuse = diffuseScale * ptLight.diffuse * material1.diffuse;
+    vec3 diffuse = diffuseScale * ptLight.diffuse * material.diffuse;
     // specular
     vec3 unitReflected = reflect(-unitLightDir, normal);
-    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material1.shininess);
-    vec3 specular = specularScale * ptLight.specular * material1.specular;
+    float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
+    vec3 specular = specularScale * ptLight.specular * material.specular;
     // spot light
     float intensity 
         = (dot(normalize(-spotLight.dir), unitLightDir) - spotLight.outerCutoffCosine)

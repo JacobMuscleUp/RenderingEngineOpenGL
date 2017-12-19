@@ -47,68 +47,78 @@ namespace cckit
 			: mVertices(_vertices), mIndices(_indices), mTextures(_textures) {
 			Setup();
 		}
-		void render(const GLshader& _shader) {
-			GLuint diffuseIndex = 0
-				, specularIndex = 0
-				, normalIndex = 0
-				, heightIndex = 0;
-			for (GLuint i = 0; i < mTextures.size(); ++i) {
-				glActiveTexture(GL_TEXTURE0 + i);
-
-				std::string textureType = mTextures[i].mType
-					, textureIndex;
-
-				if (textureType == DIFFUSE_TEXTURE_IN_SHADER)
-					textureIndex = std::to_string(++diffuseIndex);
-				else if (textureType == SPECULAR_TEXTURE_IN_SHADER)
-					textureIndex = std::to_string(++specularIndex);
-				else if (textureType == NORMAL_TEXTURE_IN_SHADER)
-					textureIndex = std::to_string(++normalIndex);
-				else if (textureType == HEIGHT_TEXTURE_IN_SHADER)
-					textureIndex = std::to_string(++heightIndex);
-
-				_shader.set1i(("material" + textureIndex + "." + textureType).c_str(), i);
-				glBindTexture(GL_TEXTURE_2D, mTextures[i].mHandle);
-			}
-
-			glBindVertexArray(mVaoHandle);
-			glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, nullptr);
-			glBindVertexArray(0);
-
-			glActiveTexture(GL_TEXTURE0);
-		}
-
+		~GLmesh();
+		void render(const GLshader& _shader) const;
 	private:
-		void Setup() {
-			glGenVertexArrays(1, &mVaoHandle);
-			glGenBuffers(1, &mVboHandle);
-			glGenBuffers(1, &mEboHandle);
-
-			glBindVertexArray(mVaoHandle);
-			glBindBuffer(GL_ARRAY_BUFFER, mVboHandle);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEboHandle);
-
-			glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(GLvertex), &mVertices[0], GL_STATIC_DRAW);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(GLuint), &mIndices[0], GL_STATIC_DRAW);
-
-			glEnableVertexAttribArray(0);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), nullptr);
-			glEnableVertexAttribArray(1);
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mNormal)));
-			glEnableVertexAttribArray(2);
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mTexCoords)));
-
-			glBindVertexArray(0);
-			glDeleteBuffers(1, &mVboHandle);
-			glDeleteBuffers(1, &mEboHandle);
-		}
+		void Setup();
 	public:
 		std::vector<GLvertex> mVertices;
 		std::vector<GLuint> mIndices;
 		std::vector<GLtexture> mTextures;
 	private:
-		GLuint mVaoHandle, mVboHandle, mEboHandle;
+		GLuint mVaoHandle;
 	};
+
+	GLmesh::~GLmesh() {
+		glDeleteVertexArrays(1, &mVaoHandle);
+	}
+
+	void GLmesh::render(const GLshader& _shader) const {
+		GLuint diffuseIndex = 0
+			, specularIndex = 0
+			, normalIndex = 0
+			, heightIndex = 0;
+		for (GLuint i = 0; i < mTextures.size(); ++i) {
+			glActiveTexture(GL_TEXTURE0 + i);
+
+			std::string textureType = mTextures[i].mType
+				, textureIndex;
+
+			if (textureType == DIFFUSE_TEXTURE_IN_SHADER)
+				textureIndex = std::to_string(++diffuseIndex);
+			else if (textureType == SPECULAR_TEXTURE_IN_SHADER)
+				textureIndex = std::to_string(++specularIndex);
+			else if (textureType == NORMAL_TEXTURE_IN_SHADER)
+				textureIndex = std::to_string(++normalIndex);
+			else if (textureType == HEIGHT_TEXTURE_IN_SHADER)
+				textureIndex = std::to_string(++heightIndex);
+
+			_shader.set1i(("material" + textureIndex + "." + textureType).c_str(), i);
+			glBindTexture(GL_TEXTURE_2D, mTextures[i].mHandle);
+		}
+
+		glBindVertexArray(mVaoHandle);
+		glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
+
+		glActiveTexture(GL_TEXTURE0);
+	}
+
+	void GLmesh::Setup() {
+		GLuint vboHandle, eboHandle;
+
+		glGenVertexArrays(1, &mVaoHandle);
+		glGenBuffers(1, &vboHandle);
+		glGenBuffers(1, &eboHandle);
+
+		glBindVertexArray(mVaoHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, vboHandle);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboHandle);
+
+		glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(GLvertex), &mVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(GLuint), &mIndices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), nullptr);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mNormal)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mTexCoords)));
+
+		glBindVertexArray(0);
+		glDeleteBuffers(1, &vboHandle);
+		glDeleteBuffers(1, &eboHandle);
+	}
 }
 
 #endif // !CCKIT_MESH_H
