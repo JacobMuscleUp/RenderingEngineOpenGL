@@ -6,11 +6,8 @@
 #include "../RenderingEngineOpenGL/GLbehavior.h"
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
 #include "../RenderingEngineOpenGL/GLfactory.h"
-#include "../global.h"
-#include "../Prefabs/prefabs.h"
+#include "../Prefabs/PrefabBull.h"
 #include <iostream>
-
-#define CONFIG_BULL_SPAWN_TIME 3.0f
 
 namespace cckit
 {
@@ -22,14 +19,13 @@ namespace cckit
 		BehaviorBullSpawner(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
-			mSpawnTime = CONFIG_BULL_SPAWN_TIME;
 			mSpawnTimer = 0.0f;
 		}
 
 		void update(float _deltaTime) {
 			if ((mSpawnTimer += _deltaTime) > mSpawnTime) {
 				mSpawnTimer = 0.0f;
-				GenPrefabBull(ConfigPrefabBull0);
+				GenPrefabBull(ConfigPrefabBull1);
 			}
 		}
 

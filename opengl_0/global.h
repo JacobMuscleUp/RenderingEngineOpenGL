@@ -5,10 +5,8 @@
 #include "RenderingEngineOpenGL/GLcamera.h"
 #include "RenderingEngineOpenGL/GLlight.h"
 #include "RenderingEngineOpenGL/GLshader.h"
+#include "RenderingEngineOpenGL/GLfactory.h"
 
-cckit::GLshader* pShaderTexture;
-cckit::GLshader* pShaderDiffuse;
-cckit::GLshader* pShaderLamp;
 cckit::GLshader* pShaderCoordAxes;
 cckit::GLshader* pShaderOutline;
 

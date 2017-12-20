@@ -98,6 +98,18 @@
     <ClInclude Include="RenderingEngineOpenGL\GLbase.h">
       <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLrenderer.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Prefabs\PrefabLamp.h">
+      <Filter>Header Files\Prefabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Prefabs\PrefabBullSpawner.h">
+      <Filter>Header Files\Prefabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Prefabs\PrefabSpider.h">
+      <Filter>Header Files\Prefabs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader0.fs">

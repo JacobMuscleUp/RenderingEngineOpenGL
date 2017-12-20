@@ -7,6 +7,9 @@
 #include <fstream>
 #include <iostream>
 #include <functional>
+#include <unordered_map>
+#include <forward_list>
+#include "GLfactory.h"
 
 namespace cckit
 {
@@ -17,80 +20,12 @@ namespace cckit
 
 	class GLshader
 	{
+		friend GLfactory<GLshader>;
+	private:
+		GLshader() : mValid(GL_FALSE) { mInstances.push_front(this); }
 	public:
-		GLshader(const GLchar* _vertexShaderPath, const GLchar* _fragmentShaderPath)
-			: mValid(GL_TRUE) 
-		{
-			std::string vertexShaderSourceStr, fragmentShaderSourceStr;
-			std::ifstream vertexShaderIfstream, fragmentShaderIfstream;
-			vertexShaderIfstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-			try {
-				vertexShaderIfstream.open(_vertexShaderPath);
-				fragmentShaderIfstream.open(_fragmentShaderPath);
-
-				std::stringstream vertexShaderSstream, fragmentShaderSstream;
-				vertexShaderSstream << vertexShaderIfstream.rdbuf();
-				fragmentShaderSstream << fragmentShaderIfstream.rdbuf();
-				vertexShaderIfstream.close();
-				fragmentShaderIfstream.close();
-
-				vertexShaderSourceStr = vertexShaderSstream.str();
-				fragmentShaderSourceStr = fragmentShaderSstream.str();
-			}
-			catch (std::ifstream::failure _exception) {
-				std::cout << "input file stream failure" << "\n";
-				return;
-			}
-
-			const GLchar *vertexShaderSource = vertexShaderSourceStr.c_str()
-				, *fragmentShaderSource = fragmentShaderSourceStr.c_str();
-
-			const GLuint vertexShaderHandle = glCreateShader(GL_VERTEX_SHADER)
-				, fragmentShaderHandle = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(vertexShaderHandle, 1, &vertexShaderSource, nullptr);
-			glShaderSource(fragmentShaderHandle, 1, &fragmentShaderSource, nullptr);
-			glCompileShader(vertexShaderHandle);
-			glCompileShader(fragmentShaderHandle);
-
-			GLint bShaderCompiled = GL_TRUE;
-			glGetShaderiv(vertexShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
-			if (!bShaderCompiled) {
-				char infoLog[512];
-				glGetShaderInfoLog(vertexShaderHandle, length(infoLog), nullptr, infoLog);
-				std::cout << "vertex shader compilation failed\n" << infoLog << "\n";
-				mValid = GL_FALSE;
-				return;
-			}
-			glGetShaderiv(fragmentShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
-			if (!bShaderCompiled) {
-				char infoLog[512];
-				glGetShaderInfoLog(fragmentShaderHandle, length(infoLog), nullptr, infoLog);
-				std::cout << "fragment shader compilation failed\n" << infoLog << "\n";
-				mValid = GL_FALSE;
-				return;
-			}
-
-			mHandle = glCreateProgram();
-			glAttachShader(mHandle, vertexShaderHandle);
-			glAttachShader(mHandle, fragmentShaderHandle);
-			glLinkProgram(mHandle);
-			glDetachShader(mHandle, vertexShaderHandle);
-			glDetachShader(mHandle, fragmentShaderHandle);
-			glDeleteShader(vertexShaderHandle);
-			glDeleteShader(fragmentShaderHandle);
-
-			GLint bProgramLinked = GL_TRUE;
-			glGetProgramiv(mHandle, GL_LINK_STATUS, &bProgramLinked);
-			if (!bProgramLinked) {
-				char infoLog[512];
-				glGetProgramInfoLog(mHandle, length(infoLog), nullptr, infoLog);
-				std::cout << "program linking failed\n" << infoLog << "\n";
-				mValid = GL_FALSE;
-				return;
-			}
-		}
-
+		void load(const GLchar* _vsPath, const GLchar* _fsPath);
+	
 		void use() const
 		{
 			if (mValid)
@@ -117,13 +52,106 @@ namespace cckit
 		}
 
 		GLuint get_handle() const { return mHandle; }
+		const std::string& vs_path() const { return mVsPath; }
+		const std::string& fs_path() const { return mFsPath; }
+
+		static void unload() {
+			while (!mInstances.empty()) {
+				delete mInstances.front();
+				mInstances.pop_front();
+			}
+		}
 
 	private:
 		GLuint mHandle;
 		GLboolean mValid;
+		std::string mVsPath, mFsPath;
 	public:
-		std::function<void(const GLshader&)> mShaderConfig;
+		std::function<void(const GLshader&)> mFsConfig;
+	private:
+		static std::forward_list<const GLshader*> mInstances;
+	public:
+		static std::unordered_map<size_t, std::unordered_map<size_t, std::function<void(const GLshader&)> > > mMapShaderPath2FsConfig;
+		static std::hash<std::string> mStringHash;
 	};
+	std::forward_list<const GLshader*> GLshader::mInstances;
+	std::unordered_map<size_t, std::unordered_map<size_t, std::function<void(const GLshader&)> > > GLshader::mMapShaderPath2FsConfig;
+	std::hash<std::string> GLshader::mStringHash;
+
+	void GLshader::load(const GLchar* _vsPath, const GLchar* _fsPath) {
+		mValid = GL_TRUE;
+		mVsPath = _vsPath;
+		mFsPath = _fsPath;
+
+		std::string vertexShaderSourceStr, fragmentShaderSourceStr;
+		std::ifstream vertexShaderIfstream, fragmentShaderIfstream;
+		vertexShaderIfstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+		try {
+			vertexShaderIfstream.open(_vsPath);
+			fragmentShaderIfstream.open(_fsPath);
+
+			std::stringstream vertexShaderSstream, fragmentShaderSstream;
+			vertexShaderSstream << vertexShaderIfstream.rdbuf();
+			fragmentShaderSstream << fragmentShaderIfstream.rdbuf();
+			vertexShaderIfstream.close();
+			fragmentShaderIfstream.close();
+
+			vertexShaderSourceStr = vertexShaderSstream.str();
+			fragmentShaderSourceStr = fragmentShaderSstream.str();
+		}
+		catch (std::ifstream::failure _exception) {
+			std::cout << "input file stream failure" << "\n";
+			return;
+		}
+
+		const GLchar *vertexShaderSource = vertexShaderSourceStr.c_str()
+			, *fragmentShaderSource = fragmentShaderSourceStr.c_str();
+
+		const GLuint vertexShaderHandle = glCreateShader(GL_VERTEX_SHADER)
+			, fragmentShaderHandle = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(vertexShaderHandle, 1, &vertexShaderSource, nullptr);
+		glShaderSource(fragmentShaderHandle, 1, &fragmentShaderSource, nullptr);
+		glCompileShader(vertexShaderHandle);
+		glCompileShader(fragmentShaderHandle);
+
+		GLint bShaderCompiled = GL_TRUE;
+		glGetShaderiv(vertexShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
+		if (!bShaderCompiled) {
+			char infoLog[512];
+			glGetShaderInfoLog(vertexShaderHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "vertex shader compilation failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
+		glGetShaderiv(fragmentShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
+		if (!bShaderCompiled) {
+			char infoLog[512];
+			glGetShaderInfoLog(fragmentShaderHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "fragment shader compilation failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
+
+		mHandle = glCreateProgram();
+		glAttachShader(mHandle, vertexShaderHandle);
+		glAttachShader(mHandle, fragmentShaderHandle);
+		glLinkProgram(mHandle);
+		glDetachShader(mHandle, vertexShaderHandle);
+		glDetachShader(mHandle, fragmentShaderHandle);
+		glDeleteShader(vertexShaderHandle);
+		glDeleteShader(fragmentShaderHandle);
+
+		GLint bProgramLinked = GL_TRUE;
+		glGetProgramiv(mHandle, GL_LINK_STATUS, &bProgramLinked);
+		if (!bProgramLinked) {
+			char infoLog[512];
+			glGetProgramInfoLog(mHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "program linking failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
+	}
 }
 
 #endif // !CCKIT_SHADER_PROG_H

@@ -19,9 +19,9 @@ namespace cckit
 			mpObj->mScale = glm::vec3(0.1f);
 		}
 
-		/*void update(float _deltaTime) {
+		void update(float _deltaTime) {
 			
-		}*/
+		}
 	public:
 		glm::vec3 mStartingPos;
 	};

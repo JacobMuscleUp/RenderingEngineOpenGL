@@ -134,8 +134,11 @@
     <ClInclude Include="Behaviors\BehaviorLamp.h" />
     <ClInclude Include="Behaviors\BehaviorSpider.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="Prefabs\PrefabBullSpawner.h" />
+    <ClInclude Include="Prefabs\PrefabLamp.h" />
     <ClInclude Include="Prefabs\prefabs.h" />
     <ClInclude Include="Prefabs\PrefabBull.h" />
+    <ClInclude Include="Prefabs\PrefabSpider.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbase.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
@@ -145,6 +148,7 @@
     <ClInclude Include="RenderingEngineOpenGL\GLmesh.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmodel.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLobj.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLrenderer.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLshader.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLutils.h" />
   </ItemGroup>

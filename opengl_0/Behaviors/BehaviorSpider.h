@@ -22,6 +22,13 @@ namespace cckit
 
 			mpObj->mRotation = glm::vec3(0, 270, 0);
 			mpObj->mScale = glm::vec3(0.01f);
+
+			if (obj().renderer_ptr()) {
+				GLrenderer& rend = *(obj().renderer_ptr());
+				rend.mSpecularColor = mSpecularColor;
+				rend.mShininess = mShininess;
+				obj().apply_renderer_config();
+			}
 		}
 
 		void update(float _deltaTime) {
@@ -36,6 +43,9 @@ namespace cckit
 			};
 			//mpObj->set_position(glm::vec3(sin(glfwGetTime()), mpObj->position()[1], mpObj->position()[2]));
 		}
+	public:
+		glm::vec3 mSpecularColor;
+		int mShininess;
 	};
 }
 

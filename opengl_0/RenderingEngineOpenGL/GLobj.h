@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "GLbase.h"
 #include "GLfactory.h"
-#include "GLmodel.h"
+#include "GLrenderer.h"
 #include "GLbehavior.h"
 #include "GLlight.h"
 #include "GLmatrixTransform.h"
@@ -45,14 +45,17 @@ namespace cckit
 		bool load_model(const std::string& _modelPath);
 
 		const glm::mat4& model_mat() const { return mModelMat; }
-		GLmodel* model_ptr() const { return mpModel; }
+		GLmodel* model_ptr() const { return mpRenderer->mpModel; }
+		GLrenderer* renderer_ptr() const { return mpRenderer; }
 
 		const glm::vec3& position() const { return mPosition; }
 		void set_position(const glm::vec3& _position) {
 			mPosition = mUnmodifiedPosition = _position;
 		}
 
-		void set_shader(const GLshader& _shader);
+		void set_shader(GLshader& _shader);
+		GLshader& shader() const { return *mpShader; }
+		void apply_renderer_config();
 
 		void face(const glm::vec3& _targetPos, glm::facing_mode _facingMode = glm::facing_mode::forward);
 
@@ -78,6 +81,7 @@ namespace cckit
 		static void globally_update_behaviors(float _deltaTime);
 		static void globally_render(GLcamera* _pCamera
 			, std::function<void(GLcamera&)> _cameraConfig, std::function<void(GLcamera&, const GLobj&)> _cameraRender);
+		//! invocation sequence
 
 		static const std::unordered_set<GLobj*>& Objs() { return mObjs; }
 	private:
@@ -113,9 +117,9 @@ namespace cckit
 		mutable glm::vec3 mRight;
 		mutable glm::vec3 mUp;
 	private:
-		GLmodel* mpModel;
+		GLrenderer* mpRenderer;
 		glm::vec3 mLocalCenter;
-		const GLshader* mpShader;
+		GLshader* mpShader;
 		mutable bool mbFacingTarget;
 		glm::vec3 mTargetPos;
 		glm::facing_mode mFacingMode;
@@ -140,7 +144,7 @@ namespace cckit
 	std::unordered_set<GLobj*> GLobj::mObjs;
 
 	inline GLobj::GLobj()
-		: mpModel(nullptr), mbFacingTarget(false), mModelMat()
+		: mpRenderer(nullptr), mbFacingTarget(false), mModelMat()
 		, mLocalPosition(0.0f), mlocalRotation(0.0f), mLocalScale(1.0f)
 		, mPosition(0.0f), mRotation(0.0f), mScale(1.0f)
 		, mForward(M_FORWARD_AXIS[0], M_FORWARD_AXIS[1], M_FORWARD_AXIS[2])
@@ -176,21 +180,24 @@ namespace cckit
 			pBehavior->on_destroyed();
 			delete pBehavior;
 		}
-		delete mpModel;
+		if (mpRenderer)
+			delete mpRenderer;
 		mObjs.erase(this);
 		std::cout << "obj destroyed" << "\n";
 	}
 
 	bool GLobj::load_model(const std::string& _modelPath) {
-		if (mpModel) delete mpModel;
-		mpModel = new GLmodel(_modelPath);
-		if (!mpModel) return false;
+		if (mpRenderer && model_ptr()) 
+			delete model_ptr();
+		mpRenderer = new GLrenderer(_modelPath);
+		if (!model_ptr()) 
+			return false;
 
 		GLfloat xMin = FLT_MAX, xMax = FLT_MIN
 			, yMin = FLT_MAX, yMax = FLT_MIN
 			, zMin = FLT_MAX, zMax = FLT_MIN;
 
-		for (GLmesh* pMesh : mpModel->mMeshes) {
+		for (GLmesh* pMesh : model_ptr()->mMeshes) {
 			for (const GLvertex& vertex : pMesh->mVertices) {
 				const glm::vec3& pos = vertex.mPos;
 
@@ -213,8 +220,19 @@ namespace cckit
 		return true;
 	}
 
-	inline void GLobj::set_shader(const GLshader& _shader) {
+	inline void GLobj::set_shader(GLshader& _shader) {
 		mpShader = &_shader;
+	}
+
+	void GLobj::apply_renderer_config() {
+		if (mpRenderer) {
+			mpShader->use();
+			mpShader->set3fv("material.diffuse", glm::value_ptr(mpRenderer->mDiffuseColor));
+			mpShader->set3fv("material.specular", glm::value_ptr(mpRenderer->mSpecularColor));
+			mpShader->set1i("material.shininess", mpRenderer->mShininess);
+			mpShader->set3fv("material1.specular", glm::value_ptr(mpRenderer->mSpecularColor));
+			mpShader->set1i("material1.shininess", mpRenderer->mShininess);
+		}
 	}
 
 	inline void GLobj::face(const glm::vec3& _targetPos, glm::facing_mode _facingMode) {
@@ -359,8 +377,8 @@ namespace cckit
 
 	inline void GLobj::RenderModel(const GLshader& _shader, std::function<void(const GLshader&)> _uniformConfig
 		, const GLshader* _pShaderOutline, std::function<void(const GLshader&)> _uniformConfigOutline) const {
-		if (mpModel)
-			mpModel->render(_shader, _uniformConfig, _pShaderOutline, _uniformConfigOutline, mbOutlined);
+		if (model_ptr())
+			model_ptr()->render(_shader, _uniformConfig, _pShaderOutline, _uniformConfigOutline, mbOutlined);
 	}
 
 	void GLobj::RenderCoordAxes(const GLshader& _shader
