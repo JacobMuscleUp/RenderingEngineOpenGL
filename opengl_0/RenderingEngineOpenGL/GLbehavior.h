@@ -11,6 +11,8 @@
 
 namespace cckit
 {
+	class GLobj;
+
 	// GLobj hasn't been defined yet
 	class GLbehavior : public GLbase
 	{

@@ -25,6 +25,9 @@
     <Filter Include="Header Files\Prefabs">
       <UniqueIdentifier>{4b7e66e2-23b1-4447-95de-2df2e7a83194}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Model Primitives">
+      <UniqueIdentifier>{9c31f5b7-3d27-47d4-b70c-1879ac2c65b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -108,6 +111,12 @@
       <Filter>Header Files\Prefabs</Filter>
     </ClInclude>
     <ClInclude Include="Prefabs\PrefabSpider.h">
+      <Filter>Header Files\Prefabs</Filter>
+    </ClInclude>
+    <ClInclude Include="Model Primitives\ModelBox.h">
+      <Filter>Header Files\Model Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="Prefabs\PrefabBox.h">
       <Filter>Header Files\Prefabs</Filter>
     </ClInclude>
   </ItemGroup>

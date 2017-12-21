@@ -2,3 +2,4 @@
 #include "PrefabLamp.h"
 #include "PrefabBullSpawner.h"
 #include "PrefabSpider.h"
+#include "PrefabBox.h"

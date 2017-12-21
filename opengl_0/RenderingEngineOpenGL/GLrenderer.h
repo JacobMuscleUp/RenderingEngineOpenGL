@@ -10,9 +10,12 @@ namespace cckit
 
 	class GLrenderer
 	{
-		GLrenderer(const std::string& _modelPath) {
-			mpModel = new GLmodel(_modelPath);
-		}
+		GLrenderer(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config)
+			: mpModel(new GLmodel(_config))
+		{}
+		GLrenderer(const std::string& _modelPath)
+			: mpModel(new GLmodel(_modelPath))
+		{}
 		~GLrenderer() {
 			delete mpModel;
 		}

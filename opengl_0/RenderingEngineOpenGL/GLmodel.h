@@ -10,14 +10,12 @@
 #include "GLmesh.h"
 #include "GLutils.h"
 
-
 namespace cckit
 {
 	class GLmodel
 	{
 	public:
-		GLmodel(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config
-			= [](std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&) {})
+		GLmodel(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config)
 			: mMeshes(), mbImported(false) {
 			std::vector<GLvertex> vertices;
 			std::vector<GLuint> indices;

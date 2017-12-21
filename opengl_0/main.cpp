@@ -109,11 +109,18 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
 	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
+	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);////////////////////////
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
+	
+	box.set_position(glm::vec3(0, 0, -3));
+	box.mScale = glm::vec3(0.1);
+	box.renderer_ptr()->mDiffuseColor = glm::vec3(1, 0, 0);
+	box.renderer_ptr()->mSpecularColor = glm::vec3(1);
+	box.renderer_ptr()->mShininess = 32;
 
-	auto tupleBuffers = GenFrameBuffer();
-	GLuint fboHandle = std::get<0>(tupleBuffers)
-		, tboHandle = std::get<1>(tupleBuffers);
+	auto tuple3Buffers = GenFrameBuffer();
+	GLuint fboHandle = std::get<0>(tuple3Buffers)
+		, tboHandle = std::get<1>(tuple3Buffers);
 
 	GLfloat quadVertices[] = {// vertex : texCoord <=> 2 : 2
 		-1.0f, 1.0f, 0.0f, 1.0f
@@ -136,7 +143,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), reinterpret_cast<void*>(2 * sizeof(GLfloat)));
 
-	pShaderScreen->set1i("screenTexture", 0);
+	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();

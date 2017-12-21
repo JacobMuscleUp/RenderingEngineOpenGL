@@ -43,7 +43,9 @@ namespace cckit
 		~GLobj();
 
 		bool load_model(const std::string& _modelPath);
-
+		bool load_model(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config
+			= [](std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&) {});
+		
 		const glm::mat4& model_mat() const { return mModelMat; }
 		GLmodel* model_ptr() const { return mpRenderer->mpModel; }
 		GLrenderer* renderer_ptr() const { return mpRenderer; }
@@ -91,6 +93,7 @@ namespace cckit
 			, std::function<void(const GLshader&)> _uniformConfigOutline = [](const GLshader&) {}) const;
 		void RenderCoordAxes(const GLshader& _shader
 			, std::function<void(const GLshader&)> _uniformConfig = [](const GLshader&) {}) const;
+		void CalculateModelLocalCenter();
 
 	public:
 		glm::vec3 mLocalPosition;
@@ -193,30 +196,18 @@ namespace cckit
 		if (!model_ptr()) 
 			return false;
 
-		GLfloat xMin = FLT_MAX, xMax = FLT_MIN
-			, yMin = FLT_MAX, yMax = FLT_MIN
-			, zMin = FLT_MAX, zMax = FLT_MIN;
+		CalculateModelLocalCenter();
+		return true;
+	}
 
-		for (GLmesh* pMesh : model_ptr()->mMeshes) {
-			for (const GLvertex& vertex : pMesh->mVertices) {
-				const glm::vec3& pos = vertex.mPos;
+	bool GLobj::load_model(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config) {
+		if (mpRenderer && model_ptr())
+			delete model_ptr();
+		mpRenderer = new GLrenderer(_config);
+		if (!model_ptr())
+			return false;
 
-				if (pos.x < xMin)
-					xMin = pos.x;
-				else if (xMax < pos.x)
-					xMax = pos.x;
-				if (pos.y < yMin)
-					yMin = pos.y;
-				else if (yMax < pos.y)
-					yMax = pos.y;
-				if (pos.z < zMin)
-					zMin = pos.z;
-				else if (zMax < pos.z)
-					zMax = pos.z;
-			}
-		}
-
-		mLocalCenter = glm::vec3((xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f, (zMin + zMax) * 0.5f);
+		CalculateModelLocalCenter();
 		return true;
 	}
 
@@ -224,7 +215,7 @@ namespace cckit
 		mpShader = &_shader;
 	}
 
-	void GLobj::apply_renderer_config() {
+	inline void GLobj::apply_renderer_config() {
 		if (mpRenderer) {
 			mpShader->use();
 			mpShader->mFsLocalConfig(*mpShader, *mpRenderer);
@@ -414,6 +405,33 @@ namespace cckit
 			glDeleteVertexArrays(1, &vaoHandle);
 			glDeleteBuffers(1, &vboHandle);
 		}
+	}
+
+	void GLobj::CalculateModelLocalCenter() {
+		GLfloat xMin = FLT_MAX, xMax = FLT_MIN
+			, yMin = FLT_MAX, yMax = FLT_MIN
+			, zMin = FLT_MAX, zMax = FLT_MIN;
+
+		for (GLmesh* pMesh : model_ptr()->mMeshes) {
+			for (const GLvertex& vertex : pMesh->mVertices) {
+				const glm::vec3& pos = vertex.mPos;
+
+				if (pos.x < xMin)
+					xMin = pos.x;
+				else if (xMax < pos.x)
+					xMax = pos.x;
+				if (pos.y < yMin)
+					yMin = pos.y;
+				else if (yMax < pos.y)
+					yMax = pos.y;
+				if (pos.z < zMin)
+					zMin = pos.z;
+				else if (zMax < pos.z)
+					zMax = pos.z;
+			}
+		}
+
+		mLocalCenter = glm::vec3((xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f, (zMin + zMax) * 0.5f);
 	}
 }
 
