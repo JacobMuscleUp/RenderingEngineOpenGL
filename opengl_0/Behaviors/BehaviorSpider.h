@@ -2,7 +2,6 @@
 #define CCKIT_SPIDER_H
 
 #include <GLFW/glfw3.h>
-#include "../RenderingEngineOpenGL/GLobj.h"
 #include "../RenderingEngineOpenGL/GLbehavior.h"
 
 namespace cckit
@@ -27,7 +26,6 @@ namespace cckit
 				GLrenderer& rend = *(obj().renderer_ptr());
 				rend.mSpecularColor = mSpecularColor;
 				rend.mShininess = mShininess;
-				obj().apply_renderer_config();
 			}
 		}
 

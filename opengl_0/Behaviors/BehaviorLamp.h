@@ -2,7 +2,6 @@
 #define CCKIT_LAMP_H
 
 #include <GLFW/glfw3.h>
-#include "../RenderingEngineOpenGL/GLobj.h"
 #include "../RenderingEngineOpenGL/GLbehavior.h"
 
 namespace cckit

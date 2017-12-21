@@ -227,11 +227,7 @@ namespace cckit
 	void GLobj::apply_renderer_config() {
 		if (mpRenderer) {
 			mpShader->use();
-			mpShader->set3fv("material.diffuse", glm::value_ptr(mpRenderer->mDiffuseColor));
-			mpShader->set3fv("material.specular", glm::value_ptr(mpRenderer->mSpecularColor));
-			mpShader->set1i("material.shininess", mpRenderer->mShininess);
-			mpShader->set3fv("material1.specular", glm::value_ptr(mpRenderer->mSpecularColor));
-			mpShader->set1i("material1.shininess", mpRenderer->mShininess);
+			mpShader->mFsLocalConfig(*mpShader, *mpRenderer);
 		}
 	}
 
@@ -258,9 +254,11 @@ namespace cckit
 
 	inline void GLobj::start_behaviors() {
 		for (auto pBehavior : mBehaviors) {
-			if (!pBehavior->started())
+			if (!pBehavior->started()) {
 				pBehavior->start();
-			pBehavior->manage();
+				pBehavior->mOnStart2Update = [](GLobj& _obj) { _obj.apply_renderer_config(); };
+				pBehavior->on_start2update();
+			}
 		}
 	}
 
@@ -302,7 +300,7 @@ namespace cckit
 	template<typename BehaviorType>
 	BehaviorType* GLobj::get_behavior() const {
 		for (auto pBehavior : mBehaviors) {
-			auto pCastBehavior = dynamic_cast<BehaviorType*>(const_cast<GLbehavior*>(pBehavior));
+			auto pCastBehavior = dynamic_cast<BehaviorType*>(pBehavior);
 			if (pCastBehavior)
 				return pCastBehavior;
 		}

@@ -192,90 +192,65 @@ GLuint GenFrameBuffer() {
 }
 
 void setup_fsConfigs() {
-	cckit::GLshader::mMapShaderPath2FsConfig
+	auto fsGlobalConfig
+		= [](const cckit::GLshader& _shader) {
+		glm::vec3 dirLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
+			, dirLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
+			, dirLightSpecular = glm::vec3(1.0f);
+		glm::vec3 ptLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
+			, ptLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
+			, ptLightSpecular = glm::vec3(1.0f);
+		glm::vec3 spotLightDiffuse = glm::vec3(0, 1, 0)
+			, spotLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
+			, spotLightSpecular = glm::vec3(1.0f);
+
+		_shader.set3fv("dirLight.dir", glm::value_ptr(dirLightDir));
+		_shader.set3fv("dirLight.ambient", glm::value_ptr(dirLightAmbient));
+		_shader.set3fv("dirLight.diffuse", glm::value_ptr(dirLightDiffuse));
+		_shader.set3fv("dirLight.specular", glm::value_ptr(dirLightSpecular));
+
+		_shader.set3fv("ptLight.pos", glm::value_ptr(lampBehavior.obj().position()));
+		_shader.set3fv("ptLight.ambient", glm::value_ptr(ptLightAmbient));
+		_shader.set3fv("ptLight.diffuse", glm::value_ptr(ptLightDiffuse));
+		_shader.set3fv("ptLight.specular", glm::value_ptr(ptLightSpecular));
+		_shader.set1f("ptLight.attenConstant", 1.0f);
+		_shader.set1f("ptLight.attenLinear", 0.09f);
+		_shader.set1f("ptLight.attenQuadratic", 0.032f);
+
+		_shader.set3fv("spotLight.pos", glm::value_ptr(camera.pos()));
+		_shader.set3fv("spotLight.dir", glm::value_ptr(camera.forward()));
+		_shader.set1f("spotLight.innerCutoffCosine", glm::cos(glm::radians(8.0f)));
+		_shader.set1f("spotLight.outerCutoffCosine", glm::cos(glm::radians(11.0f)));
+		_shader.set3fv("spotLight.ambient", glm::value_ptr(spotLightAmbient));
+		_shader.set3fv("spotLight.diffuse", glm::value_ptr(spotLightDiffuse));
+		_shader.set3fv("spotLight.specular", glm::value_ptr(spotLightSpecular));
+		_shader.set1f("spotLight.attenConstant", 1.0f);
+		_shader.set1f("spotLight.attenLinear", 0.09f);
+		_shader.set1f("spotLight.attenQuadratic", 0.032f);
+
+		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
+	};
+	auto fsLocalConfig 
+		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
+		_shader.set3fv("material.diffuse", glm::value_ptr(_renderer.mDiffuseColor));
+		_shader.set3fv("material.specular", glm::value_ptr(_renderer.mSpecularColor));
+		_shader.set1i("material.shininess", _renderer.mShininess);
+		_shader.set3fv("material1.specular", glm::value_ptr(_renderer.mSpecularColor));
+		_shader.set1i("material1.shininess", _renderer.mShininess);
+	};
+
+	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shader0.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shader0.fs")]
-	= [](const cckit::GLshader& _shader) {
-		glm::vec3 dirLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
-			, dirLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, dirLightSpecular = glm::vec3(1.0f);
-		glm::vec3 ptLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
-			, ptLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, ptLightSpecular = glm::vec3(1.0f);
-		glm::vec3 spotLightDiffuse = glm::vec3(0, 1, 0)
-			, spotLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, spotLightSpecular = glm::vec3(1.0f);
-
-		_shader.set3fv("dirLight.dir", glm::value_ptr(dirLightDir));
-		_shader.set3fv("dirLight.ambient", glm::value_ptr(dirLightAmbient));
-		_shader.set3fv("dirLight.diffuse", glm::value_ptr(dirLightDiffuse));
-		_shader.set3fv("dirLight.specular", glm::value_ptr(dirLightSpecular));
-
-		_shader.set3fv("ptLight.pos", glm::value_ptr(lampBehavior.obj().position()));
-		_shader.set3fv("ptLight.ambient", glm::value_ptr(ptLightAmbient));
-		_shader.set3fv("ptLight.diffuse", glm::value_ptr(ptLightDiffuse));
-		_shader.set3fv("ptLight.specular", glm::value_ptr(ptLightSpecular));
-		_shader.set1f("ptLight.attenConstant", 1.0f);
-		_shader.set1f("ptLight.attenLinear", 0.09f);
-		_shader.set1f("ptLight.attenQuadratic", 0.032f);
-
-		_shader.set3fv("spotLight.pos", glm::value_ptr(camera.pos()));
-		_shader.set3fv("spotLight.dir", glm::value_ptr(camera.forward()));
-		_shader.set1f("spotLight.innerCutoffCosine", glm::cos(glm::radians(8.0f)));
-		_shader.set1f("spotLight.outerCutoffCosine", glm::cos(glm::radians(11.0f)));
-		_shader.set3fv("spotLight.ambient", glm::value_ptr(spotLightAmbient));
-		_shader.set3fv("spotLight.diffuse", glm::value_ptr(spotLightDiffuse));
-		_shader.set3fv("spotLight.specular", glm::value_ptr(spotLightSpecular));
-		_shader.set1f("spotLight.attenConstant", 1.0f);
-		_shader.set1f("spotLight.attenLinear", 0.09f);
-		_shader.set1f("spotLight.attenQuadratic", 0.032f);
-
-		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
-	};
-
-	cckit::GLshader::mMapShaderPath2FsConfig
+	= cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shader1.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shader1.fs")]
-	= [](const cckit::GLshader& _shader) {
-		glm::vec3 dirLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
-			, dirLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, dirLightSpecular = glm::vec3(1.0f);
-		glm::vec3 ptLightDiffuse = ptLights[0].mColor * glm::vec3(0.7f)
-			, ptLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, ptLightSpecular = glm::vec3(1.0f);
-		glm::vec3 spotLightDiffuse = glm::vec3(0, 1, 0)
-			, spotLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
-			, spotLightSpecular = glm::vec3(1.0f);
-
-		_shader.set3fv("dirLight.dir", glm::value_ptr(dirLightDir));
-		_shader.set3fv("dirLight.ambient", glm::value_ptr(dirLightAmbient));
-		_shader.set3fv("dirLight.diffuse", glm::value_ptr(dirLightDiffuse));
-		_shader.set3fv("dirLight.specular", glm::value_ptr(dirLightSpecular));
-
-		_shader.set3fv("ptLight.pos", glm::value_ptr(lampBehavior.obj().position()));
-		_shader.set3fv("ptLight.ambient", glm::value_ptr(ptLightAmbient));
-		_shader.set3fv("ptLight.diffuse", glm::value_ptr(ptLightDiffuse));
-		_shader.set3fv("ptLight.specular", glm::value_ptr(ptLightSpecular));
-		_shader.set1f("ptLight.attenConstant", 1.0f);
-		_shader.set1f("ptLight.attenLinear", 0.09f);
-		_shader.set1f("ptLight.attenQuadratic", 0.032f);
-
-		_shader.set3fv("spotLight.pos", glm::value_ptr(camera.pos()));
-		_shader.set3fv("spotLight.dir", glm::value_ptr(camera.forward()));
-		_shader.set1f("spotLight.innerCutoffCosine", glm::cos(glm::radians(8.0f)));
-		_shader.set1f("spotLight.outerCutoffCosine", glm::cos(glm::radians(11.0f)));
-		_shader.set3fv("spotLight.ambient", glm::value_ptr(spotLightAmbient));
-		_shader.set3fv("spotLight.diffuse", glm::value_ptr(spotLightDiffuse));
-		_shader.set3fv("spotLight.specular", glm::value_ptr(spotLightSpecular));
-		_shader.set1f("spotLight.attenConstant", 1.0f);
-		_shader.set1f("spotLight.attenLinear", 0.09f);
-		_shader.set1f("spotLight.attenQuadratic", 0.032f);
-
-		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
-	};
-	
-	cckit::GLshader::mMapShaderPath2FsConfig
+	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
+		(fsGlobalConfig, fsLocalConfig);
+		
+	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.fs")]
-	= [](const cckit::GLshader&) {}; 
+	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
+		([](const cckit::GLshader&) {}, [](const cckit::GLshader&, const cckit::GLrenderer&) {});
 }

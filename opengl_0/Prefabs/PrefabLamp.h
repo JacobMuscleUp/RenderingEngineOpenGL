@@ -13,10 +13,12 @@ namespace cckit
 		lamp.add_behavior(new BehaviorLamp(_config));
 		lamp.set_shader(*GLfactory<GLshader>::generate());
 		lamp.shader().load("Shaders/shaderLamp.vs", "Shaders/shaderLamp.fs");
-		lamp.shader().mFsConfig
-			= GLshader::mMapShaderPath2FsConfig
-			[GLshader::mStringHash(lamp.shader().vs_path())]
-			[GLshader::mStringHash(lamp.shader().fs_path())];
+		auto pairGConfig2LConfig
+			= GLshader::mMapShaderPath2FsGLConfig
+				[GLshader::mStringHash(lamp.shader().vs_path())]
+				[GLshader::mStringHash(lamp.shader().fs_path())];
+		lamp.shader().mFsGlobalConfig = pairGConfig2LConfig.first;
+		lamp.shader().mFsLocalConfig = pairGConfig2LConfig.second;
 
 		return lamp;
 	}

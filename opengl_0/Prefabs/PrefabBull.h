@@ -12,10 +12,12 @@ namespace cckit
 		bull.add_behavior(new BehaviorBull(_config));
 		bull.set_shader(*GLfactory<GLshader>::generate());
 		bull.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
-		bull.shader().mFsConfig 
-			= GLshader::mMapShaderPath2FsConfig
+		auto pairGConfig2LConfig 
+			= GLshader::mMapShaderPath2FsGLConfig
 				[GLshader::mStringHash(bull.shader().vs_path())]
 				[GLshader::mStringHash(bull.shader().fs_path())];
+		bull.shader().mFsGlobalConfig = pairGConfig2LConfig.first;
+		bull.shader().mFsLocalConfig = pairGConfig2LConfig.second;
 				
 		return bull;
 	}

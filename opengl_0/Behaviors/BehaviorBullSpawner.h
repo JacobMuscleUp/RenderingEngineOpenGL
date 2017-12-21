@@ -2,7 +2,6 @@
 #define CCKIT_BULL_SPAWNER_H
 
 #include <GLFW/glfw3.h>
-#include "../RenderingEngineOpenGL/GLobj.h"
 #include "../RenderingEngineOpenGL/GLbehavior.h"
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
 #include "../RenderingEngineOpenGL/GLfactory.h"

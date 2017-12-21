@@ -12,10 +12,12 @@ namespace cckit
 		spider.add_behavior(new BehaviorSpider(_config));
 		spider.set_shader(*GLfactory<GLshader>::generate());
 		spider.shader().load("Shaders/shader0.vs", "Shaders/shader0.fs");
-		spider.shader().mFsConfig
-			= GLshader::mMapShaderPath2FsConfig
-			[GLshader::mStringHash(spider.shader().vs_path())]
-			[GLshader::mStringHash(spider.shader().fs_path())];
+		auto pairGConfig2LConfig
+			= GLshader::mMapShaderPath2FsGLConfig
+				[GLshader::mStringHash(spider.shader().vs_path())]
+				[GLshader::mStringHash(spider.shader().fs_path())];
+		spider.shader().mFsGlobalConfig = pairGConfig2LConfig.first;
+		spider.shader().mFsLocalConfig = pairGConfig2LConfig.second;
 
 		return spider;
 	}

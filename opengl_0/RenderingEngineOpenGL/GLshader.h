@@ -9,6 +9,7 @@
 #include <functional>
 #include <unordered_map>
 #include <forward_list>
+#include <utility>
 #include "GLfactory.h"
 
 namespace cckit
@@ -17,6 +18,8 @@ namespace cckit
 	inline constexpr size_t length(T(&_arr)[Size]) {
 		return Size;
 	}
+
+	class GLrenderer;
 
 	class GLshader
 	{
@@ -67,15 +70,24 @@ namespace cckit
 		GLboolean mValid;
 		std::string mVsPath, mFsPath;
 	public:
-		std::function<void(const GLshader&)> mFsConfig;
+		std::function<void(const GLshader&)> mFsGlobalConfig;// the GLshader arg must be currently used prior to its invocation
+		std::function<void(const GLshader&, const GLrenderer&)> mFsLocalConfig;// the GLshader arg must be currently used prior to its invocation
 	private:
 		static std::forward_list<const GLshader*> mInstances;
 	public:
-		static std::unordered_map<size_t, std::unordered_map<size_t, std::function<void(const GLshader&)> > > mMapShaderPath2FsConfig;
+		static std::unordered_map<
+			size_t
+			, std::unordered_map<
+				size_t
+				, std::pair<std::function<void(const GLshader&)>, std::function<void(const GLshader&, const GLrenderer&)> > > > mMapShaderPath2FsGLConfig;
 		static std::hash<std::string> mStringHash;
 	};
 	std::forward_list<const GLshader*> GLshader::mInstances;
-	std::unordered_map<size_t, std::unordered_map<size_t, std::function<void(const GLshader&)> > > GLshader::mMapShaderPath2FsConfig;
+	std::unordered_map<
+		size_t
+		, std::unordered_map<
+		size_t
+		, std::pair<std::function<void(const GLshader&)>, std::function<void(const GLshader&, const GLrenderer&)> > > > GLshader::mMapShaderPath2FsGLConfig;
 	std::hash<std::string> GLshader::mStringHash;
 
 	void GLshader::load(const GLchar* _vsPath, const GLchar* _fsPath) {

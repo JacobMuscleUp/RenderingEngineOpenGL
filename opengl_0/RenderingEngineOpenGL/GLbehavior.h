@@ -5,17 +5,18 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <functional>
 #include "GLbase.h"
+#include "GLobj.h"
 
 namespace cckit
 {
-	class GLobj;
-
+	// GLobj hasn't been defined yet
 	class GLbehavior : public GLbase
 	{
 	public:
-		GLbehavior() : mbStarted(false), mbDestroyed(false) {}
-		void manage() { if (!mbStarted) { mbStarted = true; } }
+		GLbehavior() : mbStarted(false), mbDestroyed(false), mOnStart2Update([](GLobj&) {}) {}
+		void on_start2update() { mbStarted = true; mOnStart2Update(*mpObj); }
 		virtual void start() {}
 		virtual void update(float _deltaTime) {}
 		virtual void on_destroyed() {}
@@ -27,6 +28,7 @@ namespace cckit
 		GLobj* mpObj;
 		bool mbStarted;
 		bool mbDestroyed;
+		std::function<void(GLobj&)> mOnStart2Update;
 
 		friend GLobj;
 	};

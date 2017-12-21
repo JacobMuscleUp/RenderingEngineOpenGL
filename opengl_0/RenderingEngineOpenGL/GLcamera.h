@@ -129,7 +129,7 @@ namespace cckit
 			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
 			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
 			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
-			_shader.mFsConfig(_shader);
+			_shader.mFsGlobalConfig(_shader);
 		}
 		, mpShaderOutline
 			, [this, &outlineModelMat, &_obj](const GLshader& _shader) {

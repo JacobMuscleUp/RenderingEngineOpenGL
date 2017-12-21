@@ -1,7 +1,6 @@
 #ifndef CCKIT_BULL_H
 #define CCKIT_BULL_H
 
-#include "../RenderingEngineOpenGL/GLobj.h"
 #include "../RenderingEngineOpenGL/GLbehavior.h"
 #include "../RenderingEngineOpenGL/GLmatrixTransform.h"
 #include "../RenderingEngineOpenGL/GLutils.h"
@@ -33,7 +32,6 @@ namespace cckit
 				rend.mDiffuseColor = mDiffuseColor;
 				rend.mSpecularColor = mSpecularColor;
 				rend.mShininess = mShininess;
-				obj().apply_renderer_config();
 			}
 		}
 
