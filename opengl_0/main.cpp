@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <utility>
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -23,6 +24,7 @@ using std::cout; using std::endl; using std::cin;
 
 void fps_assimp(GLFWwindow* _pWindow);
 void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime);
+std::tuple<GLuint, GLuint, GLuint> GenFrameBuffer();
 void setup_fsConfigs();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,13 +95,13 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		camera.process_mouse(offsetX, offsetY);
 	});
-	
-	glEnable(GL_DEPTH_TEST);
 
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
+	pShaderScreen->load("Shaders/shaderFramebuffer.vs", "Shaders/shaderFramebuffer.fs");
 	setup_fsConfigs();
 
 	cckit::GLfactory<cckit::GLobj> objFactory;
@@ -108,18 +110,46 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
-	
+
+	auto tupleBuffers = GenFrameBuffer();
+	GLuint fboHandle = std::get<0>(tupleBuffers)
+		, tboHandle = std::get<1>(tupleBuffers);
+
+	GLfloat quadVertices[] = {// vertex : texCoord <=> 2 : 2
+		-1.0f, 1.0f, 0.0f, 1.0f
+		, -1.0f, -1.0f, 0.0f, 0.0f
+		, 1.0f, -1.0f, 1.0f, 0.0f
+
+		, -1.0f, 1.0f, 0.0f, 1.0f
+		, 1.0f, -1.0f, 1.0f, 0.0f
+		, 1.0f, 1.0f, 1.0f, 1.0f
+	};
+
+	GLuint quadVaoHandle, quadVboHandle;
+	glGenVertexArrays(1, &quadVaoHandle);
+	glGenBuffers(1, &quadVboHandle);
+	glBindVertexArray(quadVaoHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVboHandle);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), reinterpret_cast<void*>(2 * sizeof(GLfloat)));
+
+	pShaderScreen->set1i("screenTexture", 0);
+
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
-	while (!glfwWindowShouldClose(_pWindow)) {
+	while (!glfwWindowShouldClose(_pWindow)) {// loop
 		float currentFrameTime = glfwGetTime();
 		deltaTime = currentFrameTime - lastFrameTime;
 		lastFrameTime = currentFrameTime;
 
-		glfwSwapBuffers(_pWindow);
-		glfwPollEvents();
 		process_keyboard(_pWindow, camera, deltaTime);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+		glEnable(GL_DEPTH_TEST);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);// DECOMMENT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -134,7 +164,20 @@ void fps_assimp(GLFWwindow* _pWindow)
 			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
 			_camera.render(_obj);
 		});
-	}
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+		pShaderScreen->use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindVertexArray(quadVaoHandle);
+		glBindTexture(GL_TEXTURE_2D, tboHandle);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDrawArrays(GL_TRIANGLES, 0, 6);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+
+		glfwSwapBuffers(_pWindow);
+		glfwPollEvents();
+	}//! loop
 
 	cckit::GLmodel::unload();
 	cckit::GLshader::unload();
@@ -165,7 +208,7 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
 }
 
-GLuint GenFrameBuffer() {
+std::tuple<GLuint, GLuint, GLuint> GenFrameBuffer() {
 	GLuint framebufferHandle;
 	glGenFramebuffers(1, &framebufferHandle);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebufferHandle);
@@ -188,7 +231,7 @@ GLuint GenFrameBuffer() {
 		cout << "framebuffer incomplete" << endl;
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	return framebufferHandle;
+	return std::tuple<GLuint, GLuint, GLuint>(framebufferHandle, texturebufferHandle, renderbufferHandle);
 }
 
 void setup_fsConfigs() {
@@ -230,23 +273,28 @@ void setup_fsConfigs() {
 
 		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
 	};
-	auto fsLocalConfig 
+	auto fsLocalConfigTexture
+		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
+		_shader.set3fv("material1.specular", glm::value_ptr(_renderer.mSpecularColor));
+		_shader.set1i("material1.shininess", _renderer.mShininess);
+	};
+	auto fsLocalConfigDiffuse
 		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
 		_shader.set3fv("material.diffuse", glm::value_ptr(_renderer.mDiffuseColor));
 		_shader.set3fv("material.specular", glm::value_ptr(_renderer.mSpecularColor));
 		_shader.set1i("material.shininess", _renderer.mShininess);
-		_shader.set3fv("material1.specular", glm::value_ptr(_renderer.mSpecularColor));
-		_shader.set1i("material1.shininess", _renderer.mShininess);
 	};
 
 	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shader0.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shader0.fs")]
-	= cckit::GLshader::mMapShaderPath2FsGLConfig
+	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
+		(fsGlobalConfig, fsLocalConfigTexture);
+	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shader1.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shader1.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
-		(fsGlobalConfig, fsLocalConfig);
+		(fsGlobalConfig, fsLocalConfigDiffuse);
 		
 	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.vs")]

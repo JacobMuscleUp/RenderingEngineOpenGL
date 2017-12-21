@@ -9,6 +9,7 @@
 
 cckit::GLshader* pShaderCoordAxes;
 cckit::GLshader* pShaderOutline;
+cckit::GLshader* pShaderScreen;
 
 cckit::GLcamera camera(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
 glm::vec3 dirLightDir(1, -1, 1);
