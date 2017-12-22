@@ -24,7 +24,6 @@ using std::cout; using std::endl; using std::cin;
 
 void fps_assimp(GLFWwindow* _pWindow);
 void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime);
-std::tuple<GLuint, GLuint, GLuint> GenFrameBuffer();
 void setup_fsConfigs();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,39 +108,24 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
 	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
-	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);////////////////////////
+	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);// box has no behavior attached so configs are done below
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
 	
+	// box config
 	box.set_position(glm::vec3(0, 0, -3));
 	box.mScale = glm::vec3(0.1);
-	box.renderer_ptr()->mDiffuseColor = glm::vec3(1, 0, 0);
-	box.renderer_ptr()->mSpecularColor = glm::vec3(1);
-	box.renderer_ptr()->mShininess = 32;
+	cckit::GLrenderer& rend = *box.renderer_ptr();
+	rend.mDiffuseColor = glm::vec3(1, 0, 0);
+	rend.mSpecularColor = glm::vec3(1);
+	rend.mShininess = 32;
+	box.apply_renderer_config();// necessary since renderer configs are performed outside GLbehavior::start()
+	//! box config
 
-	auto tuple3Buffers = GenFrameBuffer();
-	GLuint fboHandle = std::get<0>(tuple3Buffers)
-		, tboHandle = std::get<1>(tuple3Buffers);
-
-	GLfloat quadVertices[] = {// vertex : texCoord <=> 2 : 2
-		-1.0f, 1.0f, 0.0f, 1.0f
-		, -1.0f, -1.0f, 0.0f, 0.0f
-		, 1.0f, -1.0f, 1.0f, 0.0f
-
-		, -1.0f, 1.0f, 0.0f, 1.0f
-		, 1.0f, -1.0f, 1.0f, 0.0f
-		, 1.0f, 1.0f, 1.0f, 1.0f
-	};
-
-	GLuint quadVaoHandle, quadVboHandle;
-	glGenVertexArrays(1, &quadVaoHandle);
-	glGenBuffers(1, &quadVboHandle);
-	glBindVertexArray(quadVaoHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVboHandle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), nullptr);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), reinterpret_cast<void*>(2 * sizeof(GLfloat)));
+	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
+	GLuint fboHandle = fbo.fbo()
+		, tboHandle = fbo.texture_color();
+	cckit::GLquadVA quadVA;
+	GLuint quadVaoHandle = quadVA.vao();
 
 	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
 
@@ -213,32 +197,6 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() + glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
-}
-
-std::tuple<GLuint, GLuint, GLuint> GenFrameBuffer() {
-	GLuint framebufferHandle;
-	glGenFramebuffers(1, &framebufferHandle);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebufferHandle);
-	// color attachment
-	GLuint texturebufferHandle;
-	glGenTextures(1, &texturebufferHandle);
-	glBindTexture(GL_TEXTURE_2D, texturebufferHandle);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texturebufferHandle, 0);
-	// depth and stencil attachment
-	GLuint renderbufferHandle;
-	glGenRenderbuffers(1, &renderbufferHandle);
-	glBindRenderbuffer(GL_RENDERBUFFER, renderbufferHandle);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbufferHandle);
-	// verify framebuffer completeness
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		cout << "framebuffer incomplete" << endl;
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	return std::tuple<GLuint, GLuint, GLuint>(framebufferHandle, texturebufferHandle, renderbufferHandle);
 }
 
 void setup_fsConfigs() {

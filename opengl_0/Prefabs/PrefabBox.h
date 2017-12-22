@@ -10,12 +10,12 @@ namespace cckit
 	GLobj& GenPrefabBox(std::function<void()> _config) {
 		GLobj& box = *GLfactory<GLobj>::generate();
 		box.load_model(modelBoxConfig);
-		box.set_shader(*cckit::GLfactory<cckit::GLshader>::generate());
+		box.set_shader(*GLfactory<GLshader>::generate());
 		box.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
 		auto pairGConfig2LConfig
-			= cckit::GLshader::mMapShaderPath2FsGLConfig
-				[cckit::GLshader::mStringHash(box.shader().vs_path())]
-				[cckit::GLshader::mStringHash(box.shader().fs_path())];
+			= GLshader::mMapShaderPath2FsGLConfig
+				[GLshader::mStringHash(box.shader().vs_path())]
+				[GLshader::mStringHash(box.shader().fs_path())];
 		box.shader().mFsGlobalConfig = pairGConfig2LConfig.first;
 		box.shader().mFsLocalConfig = pairGConfig2LConfig.second;
 
