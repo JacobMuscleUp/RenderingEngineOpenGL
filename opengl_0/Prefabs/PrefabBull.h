@@ -26,7 +26,7 @@ namespace cckit
 		= [](BehaviorBull& _behavior) {
 		_behavior.mMoveSpeed = 0.22f;
 
-		_behavior.mDiffuseColor = glm::vec3(1, 0, 0);
+		_behavior.mDiffuseColor = glm::vec3(.3, 0, 0);
 		_behavior.mSpecularColor = glm::vec3(1);
 		_behavior.mShininess = 32;
 	};
@@ -35,7 +35,7 @@ namespace cckit
 		= [](BehaviorBull& _behavior) {
 		_behavior.mMoveSpeed = 0.22f;
 
-		_behavior.mDiffuseColor = glm::vec3(0, 0, 1);
+		_behavior.mDiffuseColor = glm::vec3(0, 0, .3);
 		_behavior.mSpecularColor = glm::vec3(1);
 		_behavior.mShininess = 32;
 	};

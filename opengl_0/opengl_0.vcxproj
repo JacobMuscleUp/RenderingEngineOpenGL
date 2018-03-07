@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>F:\OpenGL Extension ESSENTIAL\OpenGl Library\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\OpenGL Extension ESSENTIAL\OpenGl Library\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\C++ Programs\opengl_0\opengl_0\OpenGl Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\C++ Programs\opengl_0\opengl_0\OpenGl Libraries\lib;$(LibraryPath)</LibraryPath>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,18 +128,24 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="afx_config.h" />
+    <ClInclude Include="Behaviors\BehaviorGround.h" />
     <ClInclude Include="Behaviors\behaviors.h" />
     <ClInclude Include="Behaviors\BehaviorBull.h" />
     <ClInclude Include="Behaviors\BehaviorBullSpawner.h" />
     <ClInclude Include="Behaviors\BehaviorLamp.h" />
     <ClInclude Include="Behaviors\BehaviorSpider.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="GLshadow.h" />
     <ClInclude Include="Model Primitives\ModelBox.h" />
+    <ClInclude Include="Model Primitives\ModelGround.h" />
+    <ClInclude Include="Model Primitives\ModelSkybox.h" />
     <ClInclude Include="Prefabs\PrefabBox.h" />
     <ClInclude Include="Prefabs\PrefabBullSpawner.h" />
+    <ClInclude Include="Prefabs\PrefabGround.h" />
     <ClInclude Include="Prefabs\PrefabLamp.h" />
     <ClInclude Include="Prefabs\prefabs.h" />
     <ClInclude Include="Prefabs\PrefabBull.h" />
+    <ClInclude Include="Prefabs\PrefabSkybox.h" />
     <ClInclude Include="Prefabs\PrefabSpider.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbase.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />

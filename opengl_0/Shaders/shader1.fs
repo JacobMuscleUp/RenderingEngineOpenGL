@@ -1,5 +1,7 @@
 #version 330 core
 
+#define GAMMA 2.2
+
 struct Material {
     vec3 diffuse;
     vec3 specular;
@@ -38,9 +40,11 @@ struct SpotLight {
     float attenQuadratic;
 };
 
-in vec2 texCoord;
-in vec3 fragPos;
-in vec3 normal;
+in VS_OUT {
+    vec2 texCoords;
+	vec3 fragPos;
+	vec3 normal;
+} fs_in;
 
 out vec4 fragColor;
 
@@ -63,10 +67,10 @@ vec3 CalculateDirectionalLight(vec3 _viewDir) {
     // ambient
     vec3 ambient = dirLight.ambient * material.diffuse;
     // diffuse
-    float diffuseScale = max(0.0, dot(-dirLight.dir, normal));
+    float diffuseScale = max(0.0, dot(-dirLight.dir, fs_in.normal));
     vec3 diffuse = diffuseScale * dirLight.diffuse * material.diffuse;
     // specular
-    vec3 unitReflected = normalize(Reflect(dirLight.dir, normal));
+    vec3 unitReflected = normalize(Reflect(dirLight.dir, fs_in.normal));
     float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
     vec3 specular = specularScale * dirLight.specular * material.specular;
 
@@ -74,16 +78,16 @@ vec3 CalculateDirectionalLight(vec3 _viewDir) {
 }
 
 vec3 CalculatePointLight(vec3 _viewDir) {
-    vec3 lightDir = ptLight.pos - fragPos
+    vec3 lightDir = ptLight.pos - fs_in.fragPos
         , unitLightDir = normalize(lightDir);
 
     // ambient
     vec3 ambient = ptLight.ambient * material.diffuse;
     // diffuse
-    float diffuseScale = max(0.0, dot(unitLightDir, normal));
+    float diffuseScale = max(0.0, dot(unitLightDir, fs_in.normal));
     vec3 diffuse = diffuseScale * ptLight.diffuse * material.diffuse;
     // specular
-    vec3 unitReflected = reflect(-unitLightDir, normal);
+    vec3 unitReflected = reflect(-unitLightDir, fs_in.normal);
     float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
     vec3 specular = specularScale * ptLight.specular * material.specular;
     // attenuation
@@ -98,16 +102,16 @@ vec3 CalculatePointLight(vec3 _viewDir) {
 }
 
 vec3 CalculateSpotLight(vec3 _viewDir) {
-    vec3 lightDir = spotLight.pos - fragPos
+    vec3 lightDir = spotLight.pos - fs_in.fragPos
         , unitLightDir = normalize(lightDir);
 
     // ambient
     vec3 ambient = ptLight.ambient * material.diffuse;
     // diffuse
-    float diffuseScale = max(0.0, dot(unitLightDir, normal));
+    float diffuseScale = max(0.0, dot(unitLightDir, fs_in.normal));
     vec3 diffuse = diffuseScale * ptLight.diffuse * material.diffuse;
     // specular
-    vec3 unitReflected = reflect(-unitLightDir, normal);
+    vec3 unitReflected = reflect(-unitLightDir, fs_in.normal);
     float specularScale = pow(max(0, dot(unitReflected, _viewDir)), material.shininess);
     vec3 specular = specularScale * ptLight.specular * material.specular;
     // spot light
@@ -132,12 +136,16 @@ vec3 CalculateSpotLight(vec3 _viewDir) {
 ////////////////////////////////MAIN////////////////////////////////
 void main()
 {
-    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     
     vec3 finalColor = vec3(0.0);
     finalColor += CalculateDirectionalLight(viewDir);
     finalColor += CalculatePointLight(viewDir);
     finalColor += CalculateSpotLight(viewDir);
+
+#ifdef GAMMA
+    finalColor = pow(finalColor, vec3(1.0/GAMMA));
+#endif
 
     fragColor = vec4(finalColor, 1.0);
 }

@@ -3,3 +3,5 @@
 #include "PrefabBullSpawner.h"
 #include "PrefabSpider.h"
 #include "PrefabBox.h"
+#include "PrefabSkybox.h"
+#include "PrefabGround.h"

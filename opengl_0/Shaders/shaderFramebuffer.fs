@@ -1,7 +1,9 @@
 #version 330 core
 out vec4 fragColor;
 
-in vec2 texCoord;
+in VS_OUT {
+	vec2 texCoords;
+} fs_in;
 
 uniform sampler2D screenTexture;
 
@@ -36,7 +38,7 @@ vec4 PostprocessKernal(float _offset, float[9] _kernalWeights) {
     );
     vec3 sampleColor[9];
     for (int i = 0; i < 9; i++)
-        sampleColor[i] = texture(screenTexture, texCoord + offsets[i]).rgb;
+        sampleColor[i] = texture(screenTexture, fs_in.texCoords + offsets[i]).rgb;
     vec3 color = vec3(0.0);
     for (int i = 0; i < 9; i++)
         color += sampleColor[i] * _kernalWeights[i];
@@ -46,8 +48,8 @@ vec4 PostprocessKernal(float _offset, float[9] _kernalWeights) {
 
 void main()
 {
-    fragColor = vec4(texture(screenTexture, texCoord).rgb, 1.0);// default post-processing
+    fragColor = vec4(texture(screenTexture, fs_in.texCoords).rgb, 1.0);// default post-processing
     //fragColor = PostprocessInversion(fragColor);
-    //fragColor = PostprocessGrayscale(fragColor);
-    fragColor = PostprocessKernal(kernalOffset, blurKernalWeights);
+    fragColor = PostprocessGrayscale(fragColor);
+    //fragColor = PostprocessKernal(kernalOffset, blurKernalWeights);
 } 

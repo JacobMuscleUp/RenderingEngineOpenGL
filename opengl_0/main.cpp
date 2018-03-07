@@ -20,6 +20,8 @@
 #include "global.h"
 #include "afx_config.h"
 
+//#define POSTPROCESS_ENABLED
+
 using std::cout; using std::endl; using std::cin;
 
 void fps_assimp(GLFWwindow* _pWindow);
@@ -108,18 +110,10 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
 	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
-	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);// box has no behavior attached so configs are done below
+	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);
+	cckit::GLobj& skybox = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox0);
+	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
-	
-	// box config
-	box.set_position(glm::vec3(0, 0, -3));
-	box.mScale = glm::vec3(0.1);
-	cckit::GLrenderer& rend = *box.renderer_ptr();
-	rend.mDiffuseColor = glm::vec3(1, 0, 0);
-	rend.mSpecularColor = glm::vec3(1);
-	rend.mShininess = 32;
-	box.apply_renderer_config();// necessary since renderer configs are performed outside GLbehavior::start()
-	//! box config
 
 	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
 	GLuint fboHandle = fbo.fbo()
@@ -140,7 +134,9 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
 		glEnable(GL_DEPTH_TEST);
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);// DECOMMENT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+#ifndef POSTPROCESS_ENABLED
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);// DECOMMENT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+#endif
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -158,13 +154,17 @@ void fps_assimp(GLFWwindow* _pWindow)
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
+#ifdef POSTPROCESS_ENABLED
 		glClear(GL_COLOR_BUFFER_BIT);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+#endif
 		pShaderScreen->use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindVertexArray(quadVaoHandle);
 		glBindTexture(GL_TEXTURE_2D, tboHandle);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#ifdef POSTPROCESS_ENABLED
 		glDrawArrays(GL_TRIANGLES, 0, 6);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+#endif
 
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
