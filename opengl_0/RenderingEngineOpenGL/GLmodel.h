@@ -162,11 +162,18 @@ namespace cckit
 		for (size_t i = 0; i < _pMesh->mNumVertices; ++i) {
 			aiVector3D aiVertex = _pMesh->mVertices[i]
 				, aiNormal = _pMesh->mNormals[i];
+			aiVector3D aiTangent, aiBitangent;
+			if (aiVector3D* pTangents = _pMesh->mTangents)
+				aiTangent = pTangents[i];
+			if (aiVector3D* pBitangents = _pMesh->mBitangents)
+				aiBitangent = pBitangents[i];
 
 			GLvertex vertex(
 				glm::vec3(aiVertex.x, aiVertex.y, aiVertex.z)
 				, glm::vec3(aiNormal.x, aiNormal.y, aiNormal.z)
 				, (aipTexCoords) ? glm::vec2(aipTexCoords[i].x, aipTexCoords[i].y) : glm::vec2(0, 0)
+				, glm::vec3(aiTangent.x, aiTangent.y, aiTangent.z)
+				, glm::vec3(aiBitangent.x, aiBitangent.y, aiBitangent.z)
 			);
 
 			vertices.push_back(vertex);
@@ -209,7 +216,7 @@ namespace cckit
 			}
 			if (!bTextureAlreadyLoaded) {
 				GLtexture texture(
-					TextureFromFile(aiTexturePath.C_Str(), mDirectory)
+					load_texture(aiTexturePath.C_Str(), mDirectory)
 					, _typeName
 					, aiTexturePath.C_Str()
 				);

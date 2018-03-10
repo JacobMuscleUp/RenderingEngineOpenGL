@@ -28,7 +28,7 @@ namespace cckit
 		);
 	}
 
-	GLuint TextureFromFile(const char* _fileRelativePath, const std::string& _directory) {
+	GLuint load_texture(const char* _fileRelativePath, const std::string& _directory) {
 		std::string filePath = _fileRelativePath;
 		filePath = _directory + '/' + filePath;
 
@@ -142,6 +142,29 @@ namespace cckit
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), reinterpret_cast<void*>(2 * sizeof(GLfloat)));
 	}
 #pragma endregion GLquadVA
+
+	GLuint glLoadCubeMap(const std::vector<std::string>& _faces) {
+		GLuint textureHandle;
+		glGenTextures(1, &textureHandle);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, textureHandle);
+		
+		int width, height, numChannels;
+		for (size_t i = 0; i < _faces.size(); ++i) {
+			void* pData = stbi_load(_faces[i].c_str(), &width, &height, &numChannels, 0);
+			if (pData) {
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pData);
+			}
+			stbi_image_free(pData);
+		}
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		return textureHandle;
+	}
 }
 
 #endif // !CCKIT_UTILS_H

@@ -122,7 +122,8 @@ namespace cckit
 		glm::mat4 normalModelMat = glm::transpose(glm::inverse(modelMat));
 		// render model and outline
 		glPolygonMode(GL_FRONT_AND_BACK, _renderMode);
-		_obj.RenderModel(*_obj.mpShader
+		_obj.RenderModel(
+			*_obj.mpShader
 			, [this, &modelMat, &normalModelMat](const GLshader& _shader) {
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));
@@ -131,7 +132,7 @@ namespace cckit
 			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
 			_shader.mFsGlobalConfig(_shader);
 		}
-		, mpShaderOutline
+			, mpShaderOutline
 			, [this, &outlineModelMat, &_obj](const GLshader& _shader) {
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(outlineModelMat));

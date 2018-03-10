@@ -14,13 +14,12 @@
 #include "RenderingEngineOpenGL/GLutils.h"
 #include "RenderingEngineOpenGL/GLfactory.h"
 
-#include "Behaviors/all_behaviors.h"
 #include "global.h"
 #include "afx_config.h"
 
 using std::cout; using std::endl; using std::cin;
 
-void process_input(GLFWwindow* _pWindow);
+//void process_input(GLFWwindow* _pWindow);
 GLuint load_texture(const GLchar* _texturePath);
 
 void draw_arrays(GLFWwindow* _pWindow, GLuint _programHandle);
@@ -34,7 +33,7 @@ void draw_grid(GLFWwindow* _pWindow, const cckit::GLshader& _program, GLenum _dr
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
-int main2() {
+int main() {
 	int temp;
 
 	glfwInit();
@@ -157,7 +156,7 @@ void draw_arrays(GLFWwindow* _pWindow, GLuint _programHandle)
 	while (!glfwWindowShouldClose(_pWindow)) {
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
-		process_input(_pWindow);
+		//process_input(_pWindow);
 
 		glClearColor(1.0f, 0.0f, 1.0f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -206,7 +205,7 @@ void draw_elements(GLFWwindow* _pWindow, GLuint _programHandle, GLenum _drawMode
 	while (!glfwWindowShouldClose(_pWindow)) {
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
-		process_input(_pWindow);
+		//process_input(_pWindow);
 
 		glClearColor(1.0f, 0.0f, 1.0f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -258,7 +257,7 @@ void draw_elements_6(GLFWwindow* _pWindow, GLuint _programHandle, GLenum _drawMo
 	while (!glfwWindowShouldClose(_pWindow)) {
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
-		process_input(_pWindow);
+		//process_input(_pWindow);
 
 		glClearColor(1.0f, 0.0f, 1.0f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -310,7 +309,7 @@ void draw_elements_shader_prog(GLFWwindow* _pWindow, cckit::GLshader _program, G
 	while (!glfwWindowShouldClose(_pWindow)) {
 		glfwSwapBuffers(_pWindow);
 		glfwPollEvents();
-		process_input(_pWindow);
+		//process_input(_pWindow);
 
 		glClearColor(1.0f, 0.0f, 1.0f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -346,7 +345,7 @@ void draw_grid(GLFWwindow* _pWindow, const cckit::GLshader& _program, GLenum _dr
 			vertices[8 * (x + y * Width) + 7] = static_cast<GLfloat>(y) / Height;
 		}
 	}
-	/*GLfloat vertices[3 * Width * Height];
+	GLfloat vertices[3 * Width * Height];
 	GLint indices[6 * (Width - 1) * (Height - 1)];
 	GLfloat origin[3] = { -6.0f, 6.0f, 0.0f };
 

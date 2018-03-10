@@ -11,7 +11,7 @@ namespace cckit
 		ground.load_model(modelGroundConfig);
 		ground.add_behavior(new BehaviorGround(_config));
 		ground.set_shader(*GLfactory<GLshader>::generate());
-		ground.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
+		ground.shader().load("Shaders/shaderGround.vs", "Shaders/shaderGround.fs");
 		auto pairGConfig2LConfig
 			= GLshader::mMapShaderPath2FsGLConfig
 			[GLshader::mStringHash(ground.shader().vs_path())]

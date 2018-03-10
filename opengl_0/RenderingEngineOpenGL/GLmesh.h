@@ -19,11 +19,12 @@ namespace cckit
 {
 	struct GLvertex
 	{
-		glm::vec3 mPos, mNormal;
+		glm::vec3 mPos, mNormal, mTangent, mBitangent;
 		glm::vec2 mTexCoords;
 		GLvertex() = default;
-		GLvertex(const glm::vec3& _pos, const glm::vec3& _normal, const glm::vec2& _texCoords)
-			: mPos(_pos), mNormal(_normal), mTexCoords(_texCoords)
+		GLvertex(const glm::vec3& _pos, const glm::vec3& _normal, const glm::vec2& _texCoords
+		, const glm::vec3& _tangent = glm::vec3(), const glm::vec3& _bitangent = glm::vec3())
+			: mPos(_pos), mNormal(_normal), mTexCoords(_texCoords), mTangent(_tangent), mBitangent(_bitangent)
 		{}
 	};
 
@@ -52,7 +53,7 @@ namespace cckit
 	private:
 		void Setup();
 	public:
-		std::vector<GLvertex> mVertices;
+		std::vector<GLvertex> mVertices;// for configuring vertex attributes
 		std::vector<GLuint> mIndices;
 		std::vector<GLtexture> mTextures;
 	private:
@@ -113,7 +114,11 @@ namespace cckit
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mNormal)));
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mTexCoords)));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mTexCoords)));
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mTangent)));
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(GLvertex), reinterpret_cast<void*>(offsetof(GLvertex, mBitangent)));
 
 		glBindVertexArray(0);
 		glDeleteBuffers(1, &vboHandle);

@@ -1,13 +1,4 @@
-#include <iostream>
-#include <cassert>
-#include <utility>
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "RenderingEngineOpenGL/GLconfig.h"
 #include "RenderingEngineOpenGL/GLshader.h"
 #include "RenderingEngineOpenGL/GLmodel.h"
 #include "RenderingEngineOpenGL/GLcamera.h"
@@ -249,6 +240,10 @@ void setup_fsConfigs() {
 		_shader.set3fv("material.specular", glm::value_ptr(_renderer.mSpecularColor));
 		_shader.set1i("material.shininess", _renderer.mShininess);
 	};
+	auto fsLocalConfigTextureNM
+		= [&fsLocalConfigTexture](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
+		fsLocalConfigTexture(_shader, _renderer);
+	};
 
 	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shader0.vs")]
@@ -260,10 +255,132 @@ void setup_fsConfigs() {
 		[cckit::GLshader::mStringHash("Shaders/shader1.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
 		(fsGlobalConfig, fsLocalConfigDiffuse);
+	cckit::GLshader::mMapShaderPath2FsGLConfig
+		[cckit::GLshader::mStringHash("Shaders/shaderGround.vs")]
+		[cckit::GLshader::mStringHash("Shaders/shaderGround.fs")]
+	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
+		(fsGlobalConfig, fsLocalConfigTextureNM);
 		
 	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
 		([](const cckit::GLshader&) {}, [](const cckit::GLshader&, const cckit::GLrenderer&) {});
+
+	cckit::GLshader::mMapShaderPath2FsGLConfig
+		[cckit::GLshader::mStringHash("Shaders/shaderSkybox.vs")]
+	[cckit::GLshader::mStringHash("Shaders/shaderSkybox.fs")]
+	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
+		([](const cckit::GLshader&) {}, [](const cckit::GLshader&, const cckit::GLrenderer&) {});
+}
+
+////////////////////////////////
+//////// REVISION
+/////////////////////////////////
+int main2() {
+	int temp;
+
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow* pWindow = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "test0", nullptr, nullptr);
+	if (!pWindow) {
+		cout << "window creation failed" << endl;
+		glfwTerminate();
+		cin >> temp;
+		return -1;
+	}
+	glfwMakeContextCurrent(pWindow);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		cout << "glad init failed" << endl;
+		glfwTerminate();
+		cin >> temp;
+		return -1;
+	}
+
+	GLFWframebuffersizefun framebufferSizeCallback = [](GLFWwindow* _pWindow, int _width, int _height) {
+		glViewport(0, 0, _width, _height);
+		cout << "framebuffer resized" << endl;
+	};
+	glfwSetFramebufferSizeCallback(pWindow, framebufferSizeCallback);
+	glfwSetWindowCloseCallback(pWindow, [](GLFWwindow*) {
+		cout << "window closed" << endl;
+	});
+
+	GLfloat triVertices[] = {
+		-0.5, -1.0, 0.0,  0.0, 0.0
+		, 1.0, 0.0, 0.0,  1.0, 0.0
+		, 0.5, 1.0, 0.0,  0.5, 1.0
+	};
+	GLuint vaoHandle, vboHandle;
+	glGenVertexArrays(1, &vaoHandle);
+	glGenBuffers(1, &vboHandle);
+	glBindVertexArray(vaoHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, vboHandle);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(triVertices), triVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GL_FLOAT), nullptr);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GL_FLOAT), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+	
+	cckit::GLfactory<cckit::GLshader> factory;
+	cckit::GLshader& myShader = *cckit::GLfactory<cckit::GLshader>::generate();
+	myShader.load("s.vs", "s.fs");
+
+	GLuint textureHandle;
+	glGenTextures(1, &textureHandle);
+	glBindTexture(GL_TEXTURE_2D, textureHandle);
+
+	int width, height, numComponents;
+	unsigned char* data = stbi_load("Resources/bricks2.jpg", &width, &height, &numComponents, 0);
+	if (data) {
+		GLenum format;
+		if (numComponents == 1)
+			format = GL_RED;
+		else if (numComponents == 3)
+			format = GL_RGB;
+		else if (numComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureHandle);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else {
+		std::cout << "Texture failed to load at path: " << std::endl;
+	}
+	stbi_image_free(data);
+
+	//
+	myShader.use();
+	myShader.set1i("textureMap", 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textureHandle);
+	//
+
+	float deltaTime
+		, lastFrameTime = glfwGetTime();
+	while (!glfwWindowShouldClose(pWindow)) {// loop
+		float currentFrameTime = glfwGetTime();
+		deltaTime = currentFrameTime - lastFrameTime;
+		lastFrameTime = currentFrameTime;
+
+		myShader.use();
+		glBindVertexArray(vaoHandle);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glfwSwapBuffers(pWindow);
+		glfwPollEvents();
+	}
+
+	glfwTerminate();
+	cin >> temp;
+	return 0;
 }

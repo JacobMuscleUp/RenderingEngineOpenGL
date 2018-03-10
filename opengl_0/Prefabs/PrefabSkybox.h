@@ -9,9 +9,22 @@ namespace cckit
 
 	GLobj& GenPrefabSkybox(std::function<void(GLobj&)> _config) {
 		GLobj& skybox = *GLfactory<GLobj>::generate();
+		
 		skybox.load_model(modelSkyboxConfig);
 		skybox.set_shader(*GLfactory<GLshader>::generate());
 		skybox.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
+		/*skybox.shader().load("Shaders/shaderSkybox.vs", "Shaders/shaderSkybox.fs");
+		std::vector<std::string> faces;
+		faces.reserve(6);
+		faces.push_back("../Resources/SKYBOX/right.jpg");
+		faces.push_back("../Resources/SKYBOX/left.jpg");
+		faces.push_back("../Resources/SKYBOX/top.jpg");
+		faces.push_back("../Resources/SKYBOX/bottom.jpg");
+		faces.push_back("../Resources/SKYBOX/back.jpg");
+		faces.push_back("../Resources/SKYBOX/front.jpg");
+		GLuint textureHandle = glLoadCubeMap(faces);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, textureHandle);*/
+		
 		auto pairGConfig2LConfig
 			= GLshader::mMapShaderPath2FsGLConfig
 			[GLshader::mStringHash(skybox.shader().vs_path())]

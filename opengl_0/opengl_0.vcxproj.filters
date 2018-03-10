@@ -137,6 +137,9 @@
     <ClInclude Include="Prefabs\PrefabSkybox.h">
       <Filter>Header Files\Prefabs</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLconfig.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader0.fs">
@@ -173,6 +176,24 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shaderFramebuffer.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderSkybox.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderSkybox.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="s.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="s.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderGround.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\shaderGround.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

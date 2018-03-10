@@ -1,5 +1,5 @@
-#ifndef CCKIT_SHADER_PROG_H
-#define CCKIT_SHADER_PROG_H
+#ifndef CCKIT_GLSHADER_H
+#define CCKIT_GLSHADER_H
 
 #include <glad/glad.h>
 #include <string>
@@ -166,4 +166,4 @@ namespace cckit
 	}
 }
 
-#endif // !CCKIT_SHADER_PROG_H
+#endif // !CCKIT_GLSHADER_H

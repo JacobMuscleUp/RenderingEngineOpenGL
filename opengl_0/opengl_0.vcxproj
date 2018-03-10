@@ -150,6 +150,7 @@
     <ClInclude Include="RenderingEngineOpenGL\GLbase.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLbehavior.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLconfig.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLlight.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h" />
@@ -161,8 +162,12 @@
     <ClInclude Include="RenderingEngineOpenGL\GLutils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="s.fs" />
+    <None Include="s.vs" />
     <None Include="Shaders\shaderFramebuffer.fs" />
     <None Include="Shaders\shaderFramebuffer.vs" />
+    <None Include="Shaders\shaderGround.fs" />
+    <None Include="Shaders\shaderGround.vs" />
     <None Include="Shaders\shaderMonoColor0.fs" />
     <None Include="Shaders\shaderMonoColor0.vs" />
     <None Include="Shaders\shaderLamp.fs" />
@@ -173,6 +178,8 @@
     <None Include="Shaders\shader1.vs" />
     <None Include="Shaders\shaderMonoColor1.fs" />
     <None Include="Shaders\shaderMonoColor1.vs" />
+    <None Include="Shaders\shaderSkybox.fs" />
+    <None Include="Shaders\shaderSkybox.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
