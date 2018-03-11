@@ -42,15 +42,19 @@ namespace cckit
 
 		// populate _textures
 		//std::string textureDirectory = "Resources/Normal Mapping/brickwall";
-		std::string textureDirectory = "Resources/Normal Mapping/bricks2";
+		//std::string textureDirectory = "Resources/Normal Mapping/bricks2";
+		std::string textureDirectory = "Resources/Normal Mapping/toy_box";
 		//std::string textureRelativePath = "brickwall.jpg";
-		std::string textureRelativePath = "bricks2.jpg";
+		//std::string textureRelativePath = "bricks2.jpg";
+		std::string textureRelativePath = "wood.png";
 		std::string texturePath = textureDirectory + "/" + textureRelativePath;
 		//std::string textureNMRelativePath = "brickwall_normal.jpg";
-		std::string textureNMRelativePath = "bricks2_normal.jpg";
+		//std::string textureNMRelativePath = "bricks2_normal.jpg";
+		std::string textureNMRelativePath = "toy_box_normal.png";
 		std::string textureNMPath = textureDirectory + "/" + textureNMRelativePath;
 		//std::string textureNMRelativePath = "brickwall_disp.jpg";
-		std::string texturePMRelativePath = "bricks2_disp.jpg";
+		//std::string texturePMRelativePath = "bricks2_disp.jpg";
+		std::string texturePMRelativePath = "toy_box_disp.png";
 		std::string texturePMPath = textureDirectory + "/" + texturePMRelativePath;
 
 		GLuint textureHandle = load_texture(textureRelativePath.c_str(), textureDirectory);

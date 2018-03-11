@@ -2,6 +2,10 @@
 
 #define GAMMA 2.2
 #define PARALLAX_MAPPING
+//#define STEEP_PARALLAX_MAPPING
+#define PARALLAX_OCCLUSION_MAPPING
+#define POM_MIN_LAYERS 8
+#define POM_MAX_LAYERS 32
 
 struct Material {
     sampler2D diffuseMap;
@@ -139,40 +143,54 @@ vec3 CalculateSpotLight(vec3 _viewDir, vec3 _normal) {
     return (ambient + diffuse + specular);
 }
 
-/*vec2 ParallaxMapping(sampler2D _depthMap, vec2 _texCoords, vec3 _viewDir)
-{ 
+vec2 ParallaxMapping(sampler2D _depthMap, vec2 _texCoords, vec3 _viewDir) { 
     float height = texture(_depthMap, _texCoords).r;     
     return _texCoords - _viewDir.xy / _viewDir.z * (height * heightScale);        
-}*/
-vec2 ParallaxMapping(sampler2D depthMap, vec2 texCoords, vec3 viewDir)
-{ 
-    // number of depth layers
-    const float minLayers = 8;
-    const float maxLayers = 32;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
-    // calculate the size of each layer
+}
+
+vec2 SteepParallaxMapping(sampler2D _depthMap, vec2 _texCoords, vec3 _viewDir, int _minLayers, int _maxLayers) { 
+    float numLayers = mix(_maxLayers, _minLayers, abs(dot(vec3(0.0, 0.0, 1.0), _viewDir)));  
     float layerDepth = 1.0 / numLayers;
-    // depth of current layer
+    
     float currentLayerDepth = 0.0;
-    // the amount to shift the texture coordinates per layer (from vector P)
-    vec2 P = viewDir.xy / viewDir.z * heightScale; 
-    vec2 deltaTexCoords = P / numLayers;
-  
-    // get initial values
-    vec2  currentTexCoords     = texCoords;
-    float currentDepthMapValue = texture(depthMap, currentTexCoords).r;
-      
-    while(currentLayerDepth < currentDepthMapValue)
-    {
-        // shift texture coordinates along direction of P
-        currentTexCoords -= deltaTexCoords;
-        // get depthmap value at current texture coordinates
-        currentDepthMapValue = texture(depthMap, currentTexCoords).r;  
-        // get depth of next layer
-        currentLayerDepth += layerDepth;  
+    vec2 deltaTexCoords = (_viewDir.xy / _viewDir.z * heightScale) / numLayers;// applied per layer
+    
+    vec2 currentTexCoords = _texCoords;
+    float currentDepthMapValue = texture(_depthMap, currentTexCoords).r;
+    while(currentLayerDepth < currentDepthMapValue) {
+        currentDepthMapValue = texture(_depthMap, currentTexCoords -= deltaTexCoords).r;  
+        currentLayerDepth += layerDepth;// next layer
+    }
+
+    return currentTexCoords;
+}
+
+vec2 ParallaxOcclusionMapping(sampler2D _depthMap, vec2 _texCoords, vec3 _viewDir, int _minLayers, int _maxLayers) { 
+    float numLayers = mix(_maxLayers, _minLayers, abs(dot(vec3(0.0, 0.0, 1.0), _viewDir)));  
+    float layerDepth = 1.0 / numLayers;
+    
+    float currentLayerDepth = 0.0;
+    vec2 deltaTexCoords = (_viewDir.xy / _viewDir.z * heightScale) / numLayers;// applied per layer
+    
+    vec2 currentTexCoords = _texCoords;
+    float currentDepthMapValue = texture(_depthMap, currentTexCoords).r;
+    while(currentLayerDepth < currentDepthMapValue) {
+        currentDepthMapValue = texture(_depthMap, currentTexCoords -= deltaTexCoords).r;  
+        currentLayerDepth += layerDepth;// next layer
     }
     
-    return currentTexCoords;
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = texture(_depthMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+    return finalTexCoords;
 }
 
 ////////////////////////////////MAIN////////////////////////////////
@@ -183,7 +201,15 @@ void main()
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
     vec2 texCoords = fs_in.texCoords;
 #ifdef PARALLAX_MAPPING
-    texCoords = ParallaxMapping(material1.heightMap, fs_in.texCoords, normalize(transpose(fs_in.matTBN) * viewDir));       
+#if defined(STEEP_PARALLAX_MAPPING)
+    texCoords = SteepParallaxMapping(material1.heightMap, fs_in.texCoords, normalize(transpose(fs_in.matTBN) * viewDir)
+        , POM_MIN_LAYERS, POM_MAX_LAYERS); 
+#elif defined(PARALLAX_OCCLUSION_MAPPING)
+    texCoords = ParallaxOcclusionMapping(material1.heightMap, fs_in.texCoords, normalize(transpose(fs_in.matTBN) * viewDir)
+        , POM_MIN_LAYERS, POM_MAX_LAYERS); 
+#else
+    texCoords = ParallaxMapping(material1.heightMap, fs_in.texCoords, normalize(transpose(fs_in.matTBN) * viewDir)); 
+#endif     
     if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
         discard;
 #endif
