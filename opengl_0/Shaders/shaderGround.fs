@@ -1,10 +1,12 @@
-#version 330 core
+#version 330 core 
 
 #define GAMMA 2.2
+#define PARALLAX_MAPPING
 
 struct Material {
     sampler2D diffuseMap;
     sampler2D normalMap;
+    sampler2D heightMap;
     vec3 specular;
     int shininess;// recommended value = 32
 };
@@ -55,6 +57,7 @@ uniform PointLight ptLight;
 uniform SpotLight spotLight;
 uniform vec3 viewPos; 
 uniform mat4 normalModelMat;
+uniform float heightScale;
 
 float Sq(float a) {
     return a * a;
@@ -136,14 +139,55 @@ vec3 CalculateSpotLight(vec3 _viewDir, vec3 _normal) {
     return (ambient + diffuse + specular);
 }
 
+/*vec2 ParallaxMapping(sampler2D _depthMap, vec2 _texCoords, vec3 _viewDir)
+{ 
+    float height = texture(_depthMap, _texCoords).r;     
+    return _texCoords - _viewDir.xy / _viewDir.z * (height * heightScale);        
+}*/
+vec2 ParallaxMapping(sampler2D depthMap, vec2 texCoords, vec3 viewDir)
+{ 
+    // number of depth layers
+    const float minLayers = 8;
+    const float maxLayers = 32;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));  
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy / viewDir.z * heightScale; 
+    vec2 deltaTexCoords = P / numLayers;
+  
+    // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = texture(depthMap, currentTexCoords).r;
+      
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(depthMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    
+    return currentTexCoords;
+}
+
 ////////////////////////////////MAIN////////////////////////////////
 ////////////////////////////////MAIN////////////////////////////////
 ////////////////////////////////MAIN////////////////////////////////
 void main()
 {
     vec3 viewDir = normalize(viewPos - fs_in.fragPos);
-    //vec3 normal = texture(material1.normalMap, fs_in.texCoords).xzy * 2.0 - 1.0; TEMP FIX
-    vec3 normal = (fs_in.matTBN * texture(material1.normalMap, fs_in.texCoords).rgb) * 2.0 - 1.0;
+    vec2 texCoords = fs_in.texCoords;
+#ifdef PARALLAX_MAPPING
+    texCoords = ParallaxMapping(material1.heightMap, fs_in.texCoords, normalize(transpose(fs_in.matTBN) * viewDir));       
+    if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
+        discard;
+#endif
+    vec3 normal = fs_in.matTBN * (texture(material1.normalMap, texCoords).rgb * 2.0 - 1.0);
     normal = normalize(mat3(normalModelMat) * normal);
 
     vec3 finalColor = vec3(0.0);

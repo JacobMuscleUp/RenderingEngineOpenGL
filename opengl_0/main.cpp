@@ -67,6 +67,7 @@ int main() {
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 cckit::BehaviorLamp lampBehavior;
+float heightScale = 0.1f;
 
 void fps_assimp(GLFWwindow* _pWindow)
 {
@@ -188,6 +189,11 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() + glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
+
+	if (glfwGetKey(_pWindow, GLFW_KEY_N) == GLFW_PRESS)
+		heightScale -= _deltaTime;
+	else if (glfwGetKey(_pWindow, GLFW_KEY_M) == GLFW_PRESS)
+		heightScale += _deltaTime;
 }
 
 void setup_fsConfigs() {
@@ -229,6 +235,12 @@ void setup_fsConfigs() {
 
 		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
 	};
+	auto fsGlobalConfigTextureNM
+		= [&fsGlobalConfig](const cckit::GLshader& _shader) {
+		fsGlobalConfig(_shader);
+		_shader.set1f("heightScale", heightScale);
+	};
+
 	auto fsLocalConfigTexture
 		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
 		_shader.set3fv("material1.specular", glm::value_ptr(_renderer.mSpecularColor));
@@ -259,7 +271,7 @@ void setup_fsConfigs() {
 		[cckit::GLshader::mStringHash("Shaders/shaderGround.vs")]
 		[cckit::GLshader::mStringHash("Shaders/shaderGround.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
-		(fsGlobalConfig, fsLocalConfigTextureNM);
+		(fsGlobalConfigTextureNM, fsLocalConfigTextureNM);
 		
 	cckit::GLshader::mMapShaderPath2FsGLConfig
 		[cckit::GLshader::mStringHash("Shaders/shaderLamp.vs")]

@@ -15,6 +15,7 @@ namespace cckit
 
 		void start() {
 			mpObj->set_position(glm::vec3(0, -1, 0));
+			//mpObj->mRotation = glm::vec3(90, 0, 0);
 			mpObj->mScale = glm::vec3(5.0);
 			GLrenderer& rend = *mpObj->renderer_ptr();
 			rend.mDiffuseColor = glm::vec3(0, 0, 0.3);

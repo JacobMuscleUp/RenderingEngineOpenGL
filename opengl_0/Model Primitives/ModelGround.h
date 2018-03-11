@@ -28,24 +28,9 @@ namespace cckit
 			, uv1(1, 0)
 			, uv2(0, 0)
 			, uv3(0, 1);
-		glm::vec3 deltaP0 = p1 - p0
-			, deltaP1 = p2 - p0;
-		glm::vec2 deltaUV0 = uv1 - uv0
-			, deltaUV1 = uv2 - uv0;
-
-		float scale = 1.0f / (deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y);
-		glm::vec3 tangent(
-			scale * (deltaUV1.y * deltaP0.x - deltaUV0.y * deltaP1.x)
-			, scale * (deltaUV1.y * deltaP0.y - deltaUV0.y * deltaP1.y)
-			, scale * (deltaUV1.y * deltaP0.z - deltaUV0.y * deltaP1.z)
-		);
-		glm::vec3 bitangent(
-			scale * (-deltaUV1.x * deltaP0.x + deltaUV0.x * deltaP1.x)
-			, scale * (-deltaUV1.x * deltaP0.y + deltaUV0.x * deltaP1.y)
-			, scale * (-deltaUV1.x * deltaP0.z + deltaUV0.x * deltaP1.z)
-		);
-		tangent = glm::normalize(tangent);
-		bitangent = glm::normalize(bitangent);
+		glm::vec3 tangent;
+		glm::vec3 bitangent;
+		glQueryTangentSpace(p0, p1, p2, uv0, uv1, uv2, tangent, bitangent);
 		
 		_vertices.push_back(cckit::GLvertex(p0, glm::vec3(0, 1, 0), uv0, tangent, bitangent));
 		_vertices.push_back(cckit::GLvertex(p1, glm::vec3(0, 1, 0), uv1, tangent, bitangent));
@@ -56,17 +41,25 @@ namespace cckit
 			_indices.push_back(indices[i]);
 
 		// populate _textures
-		std::string textureDirectory = "Resources/Normal Mapping/brickwall";
-		std::string textureRelativePath = "brickwall.jpg";
+		//std::string textureDirectory = "Resources/Normal Mapping/brickwall";
+		std::string textureDirectory = "Resources/Normal Mapping/bricks2";
+		//std::string textureRelativePath = "brickwall.jpg";
+		std::string textureRelativePath = "bricks2.jpg";
 		std::string texturePath = textureDirectory + "/" + textureRelativePath;
-		std::string textureNMRelativePath = "brickwall_normal.jpg";
+		//std::string textureNMRelativePath = "brickwall_normal.jpg";
+		std::string textureNMRelativePath = "bricks2_normal.jpg";
 		std::string textureNMPath = textureDirectory + "/" + textureNMRelativePath;
+		//std::string textureNMRelativePath = "brickwall_disp.jpg";
+		std::string texturePMRelativePath = "bricks2_disp.jpg";
+		std::string texturePMPath = textureDirectory + "/" + texturePMRelativePath;
 
 		GLuint textureHandle = load_texture(textureRelativePath.c_str(), textureDirectory);
 		GLuint textureNMHandle = load_texture(textureNMRelativePath.c_str(), textureDirectory);
+		GLuint texturePMHandle = load_texture(texturePMRelativePath.c_str(), textureDirectory);
 
 		_textures.push_back(GLtexture(textureHandle, DIFFUSE_TEXTURE_IN_SHADER, texturePath.c_str()));
 		_textures.push_back(GLtexture(textureNMHandle, NORMAL_TEXTURE_IN_SHADER, textureNMPath.c_str()));
+		_textures.push_back(GLtexture(texturePMHandle, HEIGHT_TEXTURE_IN_SHADER, texturePMPath.c_str()));
 	};
 }
 

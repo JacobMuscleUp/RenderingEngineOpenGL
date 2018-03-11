@@ -165,6 +165,25 @@ namespace cckit
 
 		return textureHandle;
 	}
+
+	void glQueryTangentSpace(const glm::vec3& _p0, const glm::vec3& _p1, const glm::vec3& _p2
+		, const glm::vec2& _uv0, const glm::vec2& _uv1, const glm::vec2& _uv2
+		, glm::vec3& _tangent, glm::vec3& _bitangent) {
+		glm::vec3 deltaP0 = _p1 - _p0
+			, deltaP1 = _p2 - _p0;
+		glm::vec2 deltaUV0 = _uv1 - _uv0
+			, deltaUV1 = _uv2 - _uv0;
+
+		float scale = 1.0f / (deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y);
+		_tangent.x = scale * (deltaUV1.y * deltaP0.x - deltaUV0.y * deltaP1.x);
+		_tangent.y = scale * (deltaUV1.y * deltaP0.y - deltaUV0.y * deltaP1.y);
+		_tangent.z = scale * (deltaUV1.y * deltaP0.z - deltaUV0.y * deltaP1.z);
+		_bitangent.x = scale * (-deltaUV1.x * deltaP0.x + deltaUV0.x * deltaP1.x);
+		_bitangent.y = scale * (-deltaUV1.x * deltaP0.y + deltaUV0.x * deltaP1.y);
+		_bitangent.z = scale * (-deltaUV1.x * deltaP0.z + deltaUV0.x * deltaP1.z);
+		_tangent = glm::normalize(_tangent);
+		_bitangent = glm::normalize(_bitangent);
+	}
 }
 
 #endif // !CCKIT_UTILS_H
