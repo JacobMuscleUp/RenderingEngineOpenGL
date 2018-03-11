@@ -46,10 +46,16 @@ vec4 PostprocessKernal(float _offset, float[9] _kernalWeights) {
     return vec4(color, 1.0);
 }
 
+vec4 ReinhardToneMapping(vec4 _color) {
+    vec3 color = _color.xyz;
+    return vec4(color / (color + vec3(1.0)), 1.0);
+}
+
 void main()
 {
     fragColor = vec4(texture(screenTexture, fs_in.texCoords).rgb, 1.0);// default post-processing
+    fragColor = ReinhardToneMapping(fragColor);
     //fragColor = PostprocessInversion(fragColor);
-    fragColor = PostprocessGrayscale(fragColor);
+    //fragColor = PostprocessGrayscale(fragColor);
     //fragColor = PostprocessKernal(kernalOffset, blurKernalWeights);
 } 

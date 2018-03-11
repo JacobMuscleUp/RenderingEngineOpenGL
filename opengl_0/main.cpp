@@ -11,7 +11,7 @@
 #include "global.h"
 #include "afx_config.h"
 
-//#define POSTPROCESS_ENABLED
+#define POSTPROCESS_ENABLED
 
 using std::cout; using std::endl; using std::cin;
 
