@@ -12,7 +12,7 @@ namespace cckit
 		
 		skybox.load_model(modelSkyboxConfig);
 		skybox.set_shader(*GLfactory<GLshader>::generate());
-		skybox.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
+		skybox.shader().load("Shaders/ShaderDiffuse.vs", "Shaders/ShaderDiffuse.fs");
 		/*skybox.shader().load("Shaders/shaderSkybox.vs", "Shaders/shaderSkybox.fs");
 		std::vector<std::string> faces;
 		faces.reserve(6);

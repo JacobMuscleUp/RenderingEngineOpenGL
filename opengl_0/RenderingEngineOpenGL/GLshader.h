@@ -11,6 +11,7 @@
 #include <forward_list>
 #include <utility>
 #include "GLfactory.h"
+#include "GLutils.h"
 
 namespace cckit
 {
@@ -64,6 +65,8 @@ namespace cckit
 				mInstances.pop_front();
 			}
 		}
+	private:
+		void Preprocess(std::string& src);
 
 	private:
 		GLuint mHandle;
@@ -95,27 +98,10 @@ namespace cckit
 		mVsPath = _vsPath;
 		mFsPath = _fsPath;
 
-		std::string vertexShaderSourceStr, fragmentShaderSourceStr;
-		std::ifstream vertexShaderIfstream, fragmentShaderIfstream;
-		vertexShaderIfstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-		try {
-			vertexShaderIfstream.open(_vsPath);
-			fragmentShaderIfstream.open(_fsPath);
-
-			std::stringstream vertexShaderSstream, fragmentShaderSstream;
-			vertexShaderSstream << vertexShaderIfstream.rdbuf();
-			fragmentShaderSstream << fragmentShaderIfstream.rdbuf();
-			vertexShaderIfstream.close();
-			fragmentShaderIfstream.close();
-
-			vertexShaderSourceStr = vertexShaderSstream.str();
-			fragmentShaderSourceStr = fragmentShaderSstream.str();
-		}
-		catch (std::ifstream::failure _exception) {
-			std::cout << "input file stream failure" << "\n";
-			return;
-		}
+		std::string vertexShaderSourceStr = glLoadFile(_vsPath)
+			, fragmentShaderSourceStr = glLoadFile(_fsPath);
+		Preprocess(vertexShaderSourceStr);
+		Preprocess(fragmentShaderSourceStr);
 
 		const GLchar *vertexShaderSource = vertexShaderSourceStr.c_str()
 			, *fragmentShaderSource = fragmentShaderSourceStr.c_str();
@@ -163,6 +149,25 @@ namespace cckit
 			mValid = GL_FALSE;
 			return;
 		}
+	}
+
+	void GLshader::Preprocess(std::string& src) {
+		std::stringstream sstream(src), sstreamTemp;
+		std::string pragma("#pragma include");
+
+		for (std::string line; std::getline(sstream, line);) {
+			if (size_t pos = line.find(pragma) != std::string::npos) {
+				size_t openQuotePos = line.find("\"");
+				size_t closingQuotePos = line.find("\"", openQuotePos + 1);
+
+				std::string includedFilePath = line.substr(openQuotePos + 1, closingQuotePos - openQuotePos - 1);
+				sstreamTemp << glLoadFile(includedFilePath) << "\n";
+			}
+			else
+				sstreamTemp << line << "\n";
+		}
+		
+		src = sstreamTemp.str();
 	}
 }
 

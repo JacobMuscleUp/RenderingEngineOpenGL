@@ -63,6 +63,28 @@ namespace cckit
 		return textureHandle;
 	}
 
+	std::string glLoadFile(const std::string& _path) {
+		std::string fileStr;
+		std::ifstream fileIfstream;
+		fileIfstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+		try {
+			fileIfstream.open(_path);
+
+			std::stringstream fileSstream;
+			fileSstream << fileIfstream.rdbuf();
+			fileIfstream.close();
+
+			fileStr = fileSstream.str();
+		}
+		catch (std::ifstream::failure _exception) {
+			std::cout << "input file stream failure" << "\n";
+			return "";
+		}
+
+		return fileStr;
+	}
+
 	void destroy(const GLbase& _base) {
 		(const_cast<GLbase&>(_base)).destroy();
 	}

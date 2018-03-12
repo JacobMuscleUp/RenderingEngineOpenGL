@@ -94,7 +94,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
-	pShaderScreen->load("Shaders/shaderFramebuffer.vs", "Shaders/shaderFramebuffer.fs");
+	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
 	setup_fsConfigs();
 
 	cckit::GLfactory<cckit::GLobj> objFactory;
@@ -258,18 +258,18 @@ void setup_fsConfigs() {
 	};
 
 	cckit::GLshader::mMapShaderPath2FsGLConfig
-		[cckit::GLshader::mStringHash("Shaders/shader0.vs")]
-		[cckit::GLshader::mStringHash("Shaders/shader0.fs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderTexture.vs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderTexture.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
 		(fsGlobalConfig, fsLocalConfigTexture);
 	cckit::GLshader::mMapShaderPath2FsGLConfig
-		[cckit::GLshader::mStringHash("Shaders/shader1.vs")]
-		[cckit::GLshader::mStringHash("Shaders/shader1.fs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderDiffuse.vs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderDiffuse.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
 		(fsGlobalConfig, fsLocalConfigDiffuse);
 	cckit::GLshader::mMapShaderPath2FsGLConfig
-		[cckit::GLshader::mStringHash("Shaders/shaderGround.vs")]
-		[cckit::GLshader::mStringHash("Shaders/shaderGround.fs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderTexturePom.vs")]
+		[cckit::GLshader::mStringHash("Shaders/ShaderTexturePom.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
 		(fsGlobalConfigTextureNM, fsLocalConfigTextureNM);
 		

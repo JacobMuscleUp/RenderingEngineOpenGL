@@ -11,7 +11,7 @@ namespace cckit
 		GLobj& box = *GLfactory<GLobj>::generate();
 		box.load_model(modelBoxConfig);
 		box.set_shader(*GLfactory<GLshader>::generate());
-		box.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
+		box.shader().load("Shaders/ShaderDiffuse.vs", "Shaders/ShaderDiffuse.fs");
 		auto pairGConfig2LConfig
 			= GLshader::mMapShaderPath2FsGLConfig
 				[GLshader::mStringHash(box.shader().vs_path())]

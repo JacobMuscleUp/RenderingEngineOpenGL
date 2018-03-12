@@ -142,18 +142,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\shader0.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader0.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader1.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shader1.vs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\shaderLamp.vs">
       <Filter>Shaders</Filter>
     </None>
@@ -172,12 +160,6 @@
     <None Include="Shaders\shaderMonoColor1.vs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\shaderFramebuffer.fs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\shaderFramebuffer.vs">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Shaders\shaderSkybox.fs">
       <Filter>Shaders</Filter>
     </None>
@@ -190,10 +172,43 @@
     <None Include="s.fs">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\shaderGround.fs">
+    <None Include="Shaders\effects.glsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Shaders\shaderGround.vs">
+    <None Include="Shaders\postprocess.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\utils.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderTexture.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderTexture.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDiffuse.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDiffuse.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderTexturePom.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderTexturePom.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\lightingBACKUP.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\lighting.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderFramebuffer.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderFramebuffer.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

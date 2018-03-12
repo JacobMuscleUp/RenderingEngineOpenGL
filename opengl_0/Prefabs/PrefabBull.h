@@ -11,7 +11,7 @@ namespace cckit
 		bull.load_model("Resources/OBJ/bull/bull.obj");
 		bull.add_behavior(new BehaviorBull(_config));
 		bull.set_shader(*GLfactory<GLshader>::generate());
-		bull.shader().load("Shaders/shader1.vs", "Shaders/shader1.fs");
+		bull.shader().load("Shaders/ShaderDiffuse.vs", "Shaders/ShaderDiffuse.fs");
 		auto pairGConfig2LConfig 
 			= GLshader::mMapShaderPath2FsGLConfig
 				[GLshader::mStringHash(bull.shader().vs_path())]

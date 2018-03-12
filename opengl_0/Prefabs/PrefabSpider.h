@@ -11,7 +11,7 @@ namespace cckit
 		spider.load_model("Resources/OBJ/spider/spider.obj");
 		spider.add_behavior(new BehaviorSpider(_config));
 		spider.set_shader(*GLfactory<GLshader>::generate());
-		spider.shader().load("Shaders/shader0.vs", "Shaders/shader0.fs");
+		spider.shader().load("Shaders/ShaderTexture.vs", "Shaders/ShaderTexture.fs");
 		auto pairGConfig2LConfig
 			= GLshader::mMapShaderPath2FsGLConfig
 				[GLshader::mStringHash(spider.shader().vs_path())]
