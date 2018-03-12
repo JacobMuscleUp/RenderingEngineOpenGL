@@ -135,7 +135,6 @@
     <ClInclude Include="Behaviors\BehaviorLamp.h" />
     <ClInclude Include="Behaviors\BehaviorSpider.h" />
     <ClInclude Include="global.h" />
-    <ClInclude Include="GLshadow.h" />
     <ClInclude Include="Model Primitives\ModelBox.h" />
     <ClInclude Include="Model Primitives\ModelGround.h" />
     <ClInclude Include="Model Primitives\ModelSkybox.h" />
@@ -168,6 +167,8 @@
     <None Include="Shaders\lighting.glsl" />
     <None Include="Shaders\lightingBACKUP.glsl" />
     <None Include="Shaders\postprocess.glsl" />
+    <None Include="Shaders\ShaderDepthMap.fs" />
+    <None Include="Shaders\ShaderDepthMap.vs" />
     <None Include="Shaders\ShaderFramebuffer.fs" />
     <None Include="Shaders\ShaderFramebuffer.vs" />
     <None Include="Shaders\ShaderTexturePom.fs" />

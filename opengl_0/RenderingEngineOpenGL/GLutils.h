@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include "GLbase.h"
+#include "GLmatrixTransform.h"
 
 namespace cckit
 {
@@ -129,6 +130,44 @@ namespace cckit
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 #pragma endregion GLframebuffer
+
+#pragma region GLframebufferDepthMap
+	class GLframebufferDepthMap
+	{
+	public:
+		GLframebufferDepthMap(GLuint _width, GLuint _height);
+		~GLframebufferDepthMap() {
+			glDeleteFramebuffers(1, &mFboHandle);
+			glDeleteTextures(1, &mDepthMapHandle);
+		}
+
+		glm::mat4 GetDepthMapSpaceMatrix(const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const;
+	private:
+		GLuint mFboHandle, mDepthMapHandle;
+	};
+	GLframebufferDepthMap::GLframebufferDepthMap(GLuint _width, GLuint _height) {
+		glGenTextures(1, &mDepthMapHandle);
+		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _width, _height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		glGenFramebuffers(1, &mFboHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepthMapHandle, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	glm::mat4 GLframebufferDepthMap::GetDepthMapSpaceMatrix(
+		const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const {
+		glm::mat4 matProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
+		glm::mat4 matView = glm::lookAtRH(_vOriginPos, _vOriginPos + _vDir);
+		return matProjection * matView;
+	}
+#pragma endregion GLframebufferDepthMap
 
 #pragma region GLquadVA
 	class GLquadVA

@@ -7,6 +7,9 @@
 #include "RenderingEngineOpenGL/GLshader.h"
 #include "RenderingEngineOpenGL/GLfactory.h"
 
+#define POSTPROCESS_ENABLED
+#define SHADOW_MAPPING_ENABLED
+
 cckit::GLshader* pShaderCoordAxes;
 cckit::GLshader* pShaderOutline;
 cckit::GLshader* pShaderScreen;

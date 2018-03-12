@@ -119,9 +119,6 @@
     <ClInclude Include="Prefabs\PrefabBox.h">
       <Filter>Header Files\Prefabs</Filter>
     </ClInclude>
-    <ClInclude Include="GLshadow.h">
-      <Filter>Header Files\RenderingEngineOpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="Model Primitives\ModelSkybox.h">
       <Filter>Header Files\Model Primitives</Filter>
     </ClInclude>
@@ -209,6 +206,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\ShaderFramebuffer.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDepthMap.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDepthMap.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

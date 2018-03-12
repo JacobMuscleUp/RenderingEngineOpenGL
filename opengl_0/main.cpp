@@ -11,8 +11,6 @@
 #include "global.h"
 #include "afx_config.h"
 
-#define POSTPROCESS_ENABLED
-
 using std::cout; using std::endl; using std::cin;
 
 void fps_assimp(GLFWwindow* _pWindow);
@@ -107,13 +105,19 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
 
+#ifdef POSTPROCESS_ENABLED
 	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
 	GLuint fboHandle = fbo.fbo()
 		, tboHandle = fbo.texture_color();
 	cckit::GLquadVA quadVA;
 	GLuint quadVaoHandle = quadVA.vao();
+#endif
 
 	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
+
+#ifdef SHADOW_MAPPING_ENABLED
+	cckit::GLframebufferDepthMap depthMapFbo(1024, 1024);
+#endif
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
@@ -124,11 +128,15 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		process_keyboard(_pWindow, camera, deltaTime);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
-		glEnable(GL_DEPTH_TEST);
-#ifndef POSTPROCESS_ENABLED
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);// DECOMMENT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+#ifdef SHADOW_MAPPING_ENABLED
+
 #endif
+
+#ifdef POSTPROCESS_ENABLED
+		glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+#endif
+
+		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -146,16 +154,15 @@ void fps_assimp(GLFWwindow* _pWindow)
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
+
 #ifdef POSTPROCESS_ENABLED
-		glClear(GL_COLOR_BUFFER_BIT);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
-#endif
+		glClear(GL_COLOR_BUFFER_BIT);
 		pShaderScreen->use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindVertexArray(quadVaoHandle);
 		glBindTexture(GL_TEXTURE_2D, tboHandle);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-#ifdef POSTPROCESS_ENABLED
-		glDrawArrays(GL_TRIANGLES, 0, 6);// COMMENT OUT THIS TO RESTORE TO REDNERING WITHOUT ADDITIONAL FRAMEBUFFER
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 #endif
 
 		glfwSwapBuffers(_pWindow);
