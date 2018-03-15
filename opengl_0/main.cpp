@@ -90,9 +90,11 @@ void fps_assimp(GLFWwindow* _pWindow)
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderDepthMap = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
 	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
+	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs");
 	setup_fsConfigs();
 
 	cckit::GLfactory<cckit::GLobj> objFactory;
@@ -107,10 +109,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 #ifdef POSTPROCESS_ENABLED
 	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
-	GLuint fboHandle = fbo.fbo()
-		, tboHandle = fbo.texture_color();
-	cckit::GLquadVA quadVA;
-	GLuint quadVaoHandle = quadVA.vao();
+	cckit::GLquad quad;
 #endif
 
 	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
@@ -121,6 +120,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	while (!glfwWindowShouldClose(_pWindow)) {// loop
 		float currentFrameTime = glfwGetTime();
 		deltaTime = currentFrameTime - lastFrameTime;
@@ -129,11 +129,50 @@ void fps_assimp(GLFWwindow* _pWindow)
 		process_keyboard(_pWindow, camera, deltaTime);
 
 #ifdef SHADOW_MAPPING_ENABLED
+		glm::mat4 lightProjection, lightView;
+		glm::mat4 lightSpaceMatrix;
+		float near_plane = 1.0f, far_plane = 7.5f;
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		lightView = glm::lookAt(dirLightDir, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		lightSpaceMatrix = lightProjection * lightView;
+		// render scene from light's point of view
+		pShaderDepthMap->use();
+		pShaderDepthMap->setmatrix4fv("lightSpaceMatrix", 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		pShaderDepthMap->set1i("texture2", 0);
 
+		depthMapFbo.set_active<true>();
+		glViewport(0, 0, 1024, 1024);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		cckit::GLobj::globally_render(&camera
+			, [](cckit::GLcamera& _camera) {
+			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_shader_outline(*pShaderOutline);
+			_camera.set_shader_coord_axes(*pShaderCoordAxes);
+		}
+			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+			_camera.render(_obj);
+		});
+
+
+		cckit::GLquad quad2;
+
+		glClear(GL_COLOR_BUFFER_BIT);
+		pShaderDepthMap->use();
+		glActiveTexture(GL_TEXTURE0);
+		quad2.prepare();
+		depthMapFbo.push_depthmap(GL_TEXTURE0);
+		quad2.render(GL_FILL);
+
+		depthMapFbo.set_active<false>();
+
+		glfwSwapBuffers(_pWindow);
+		glfwPollEvents();
+
+		continue;
 #endif
 
 #ifdef POSTPROCESS_ENABLED
-		glBindFramebuffer(GL_FRAMEBUFFER, fboHandle);
+		fbo.set_active<true>();
 #endif
 
 		glEnable(GL_DEPTH_TEST);
@@ -151,18 +190,16 @@ void fps_assimp(GLFWwindow* _pWindow)
 			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
 			_camera.render(_obj);
 		});
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		glDisable(GL_DEPTH_TEST);
 
 #ifdef POSTPROCESS_ENABLED
+		fbo.set_active<false>();
 		glClear(GL_COLOR_BUFFER_BIT);
 		pShaderScreen->use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindVertexArray(quadVaoHandle);
-		glBindTexture(GL_TEXTURE_2D, tboHandle);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		quad.prepare();
+		fbo.push_texture(GL_TEXTURE0);
+		quad.render(GL_FILL);
 #endif
 
 		glfwSwapBuffers(_pWindow);

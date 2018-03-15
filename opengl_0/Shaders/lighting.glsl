@@ -1,6 +1,8 @@
 #ifndef CCKIT_GLSL_LIGHTING
 #define CCKIT_GLSL_LIGHTING
 
+#pragma include "Shaders/utils.glsl"
+
 struct Material {
 #ifdef SHADING_DIFFUSE
 	vec3 diffuse;

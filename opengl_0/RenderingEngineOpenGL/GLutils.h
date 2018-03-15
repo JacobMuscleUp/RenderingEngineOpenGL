@@ -100,10 +100,15 @@ namespace cckit
 			glDeleteTextures(1, &mTextureColorHandle);
 			glDeleteRenderbuffers(1, &mRboDepthStencilHandle);
 		}
-
-		GLuint fbo() const { return mFboHandle; }
-		GLuint texture_color() const { return mTextureColorHandle; }
-		GLuint rbo_depth_stencil() const { return mRboDepthStencilHandle; }
+		template<bool Active>
+		void set_active() {
+			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
+		}
+		template<>
+		void set_active<false>() {
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		void push_texture(GLenum _texture);
 	private:
 		GLuint mFboHandle, mTextureColorHandle, mRboDepthStencilHandle;
 	};
@@ -129,6 +134,10 @@ namespace cckit
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+	void GLframebuffer::push_texture(GLenum _texture) {
+		glActiveTexture(_texture);
+		glBindTexture(GL_TEXTURE_2D, mTextureColorHandle);
+	}
 #pragma endregion GLframebuffer
 
 #pragma region GLframebufferDepthMap
@@ -140,6 +149,15 @@ namespace cckit
 			glDeleteFramebuffers(1, &mFboHandle);
 			glDeleteTextures(1, &mDepthMapHandle);
 		}
+		template<bool Active>
+		void set_active() {
+			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
+		}
+		template<>
+		void set_active<false>() {
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		void push_depthmap(GLenum _texture);
 
 		glm::mat4 GetDepthMapSpaceMatrix(const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const;
 	private:
@@ -161,6 +179,10 @@ namespace cckit
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+	void GLframebufferDepthMap::push_depthmap(GLenum _texture) {
+		glActiveTexture(_texture);
+		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
+	}
 	glm::mat4 GLframebufferDepthMap::GetDepthMapSpaceMatrix(
 		const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const {
 		glm::mat4 matProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
@@ -169,20 +191,21 @@ namespace cckit
 	}
 #pragma endregion GLframebufferDepthMap
 
-#pragma region GLquadVA
-	class GLquadVA
+#pragma region GLquad
+	class GLquad
 	{
 	public:
-		GLquadVA();
-		~GLquadVA() {
+		GLquad();
+		~GLquad() {
 			glDeleteVertexArrays(1, &mVaoHandle);
 			glDeleteBuffers(1, &mVboHandle);
 		}
-		GLuint vao() const { return mVaoHandle; }
+		void prepare() const;
+		void render(GLenum _drawMode) const;
 	private:
 		GLuint mVaoHandle, mVboHandle;
 	};
-	GLquadVA::GLquadVA() {
+	GLquad::GLquad() {
 		GLfloat quadVertices[] = {// vertex : texCoord <=> 2 : 2
 			-1.0f, 1.0f, 0.0f, 1.0f
 			, -1.0f, -1.0f, 0.0f, 0.0f
@@ -203,7 +226,14 @@ namespace cckit
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), reinterpret_cast<void*>(2 * sizeof(GLfloat)));
 	}
-#pragma endregion GLquadVA
+	void GLquad::prepare() const {
+		glBindVertexArray(mVaoHandle);
+	}
+	void GLquad::render(GLenum _drawMode) const {
+		glPolygonMode(GL_FRONT_AND_BACK, _drawMode);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+#pragma endregion GLquad
 
 	GLuint glLoadCubeMap(const std::vector<std::string>& _faces) {
 		GLuint textureHandle;

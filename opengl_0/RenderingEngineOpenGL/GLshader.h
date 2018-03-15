@@ -66,7 +66,8 @@ namespace cckit
 			}
 		}
 	private:
-		void Preprocess(std::string& src);
+		bool Preprocess(std::string& src);
+		void PreprocessRec(std::string& src);
 
 	private:
 		GLuint mHandle;
@@ -100,8 +101,12 @@ namespace cckit
 
 		std::string vertexShaderSourceStr = glLoadFile(_vsPath)
 			, fragmentShaderSourceStr = glLoadFile(_fsPath);
-		Preprocess(vertexShaderSourceStr);
+		/*Preprocess(vertexShaderSourceStr);
 		Preprocess(fragmentShaderSourceStr);
+		while (Preprocess(vertexShaderSourceStr)) {}
+		while (Preprocess(fragmentShaderSourceStr)) {}*/
+		PreprocessRec(vertexShaderSourceStr);
+		PreprocessRec(fragmentShaderSourceStr);
 
 		const GLchar *vertexShaderSource = vertexShaderSourceStr.c_str()
 			, *fragmentShaderSource = fragmentShaderSourceStr.c_str();
@@ -151,12 +156,17 @@ namespace cckit
 		}
 	}
 
-	void GLshader::Preprocess(std::string& src) {
+	bool GLshader::Preprocess(std::string& src) {
+		bool bPragmaFound = false;
+
 		std::stringstream sstream(src), sstreamTemp;
 		std::string pragma("#pragma include");
 
 		for (std::string line; std::getline(sstream, line);) {
-			if (size_t pos = line.find(pragma) != std::string::npos) {
+			if (line.find(pragma) != std::string::npos) {
+				bPragmaFound = true;
+				if (line.find("//") == 0) continue;
+
 				size_t openQuotePos = line.find("\"");
 				size_t closingQuotePos = line.find("\"", openQuotePos + 1);
 
@@ -167,6 +177,31 @@ namespace cckit
 				sstreamTemp << line << "\n";
 		}
 		
+		src = sstreamTemp.str();
+		return bPragmaFound;
+	}
+
+	void GLshader::PreprocessRec(std::string& src) {
+		std::stringstream sstream(src), sstreamTemp;
+		std::string pragma("#pragma include");
+
+		for (std::string line; std::getline(sstream, line);) {
+			if (line.find(pragma) != std::string::npos) {
+				if (line.find("//") == 0) continue;
+
+				size_t openQuotePos = line.find("\"");
+				size_t closingQuotePos = line.find("\"", openQuotePos + 1);
+
+				std::string includedFilePath = line.substr(openQuotePos + 1, closingQuotePos - openQuotePos - 1);
+
+				std::string includedFileStr = glLoadFile(includedFilePath);
+				PreprocessRec(includedFileStr);
+				sstreamTemp << includedFileStr << "\n";
+			}
+			else
+				sstreamTemp << line << "\n";
+		}
+
 		src = sstreamTemp.str();
 	}
 }
