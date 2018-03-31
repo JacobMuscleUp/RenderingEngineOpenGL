@@ -137,6 +137,9 @@
     <ClInclude Include="RenderingEngineOpenGL\GLconfig.h">
       <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="cckitdef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shaderLamp.vs">
@@ -161,12 +164,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\shaderSkybox.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="s.vs">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="s.fs">
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\effects.glsl">
@@ -212,6 +209,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\ShaderDepthMap.vs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDepthDebug.fs">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ShaderDepthDebug.vs">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

@@ -134,6 +134,7 @@
     <ClInclude Include="Behaviors\BehaviorBullSpawner.h" />
     <ClInclude Include="Behaviors\BehaviorLamp.h" />
     <ClInclude Include="Behaviors\BehaviorSpider.h" />
+    <ClInclude Include="cckitdef.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="Model Primitives\ModelBox.h" />
     <ClInclude Include="Model Primitives\ModelGround.h" />
@@ -161,12 +162,12 @@
     <ClInclude Include="RenderingEngineOpenGL\GLutils.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="s.fs" />
-    <None Include="s.vs" />
     <None Include="Shaders\effects.glsl" />
     <None Include="Shaders\lighting.glsl" />
     <None Include="Shaders\lightingBACKUP.glsl" />
     <None Include="Shaders\postprocess.glsl" />
+    <None Include="Shaders\ShaderDepthDebug.fs" />
+    <None Include="Shaders\ShaderDepthDebug.vs" />
     <None Include="Shaders\ShaderDepthMap.fs" />
     <None Include="Shaders\ShaderDepthMap.vs" />
     <None Include="Shaders\ShaderFramebuffer.fs" />

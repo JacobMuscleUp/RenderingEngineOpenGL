@@ -48,11 +48,11 @@ namespace cckit
 		void set1i(const GLchar* _uniformVar, GLint _arg0) const {
 			glUniform1i(glGetUniformLocation(mHandle, _uniformVar), _arg0);
 		}
-		void setmatrix4fv(const GLchar* _uniformVar, GLsizei _count, GLboolean _transpose, const GLfloat* _value) const {
-			glUniformMatrix4fv(glGetUniformLocation(mHandle, _uniformVar), _count, _transpose, _value);
+		void setmatrix4fv(const GLchar* _uniformVar, GLsizei _count, GLboolean _transpose, const glm::mat4& _value) const {
+			glUniformMatrix4fv(glGetUniformLocation(mHandle, _uniformVar), _count, _transpose, glm::value_ptr(_value));
 		}
-		void set3fv(const GLchar* _uniformVar, const GLfloat* _arg0) const {
-			glUniform3fv(glGetUniformLocation(mHandle, _uniformVar), 1, _arg0);
+		void set3fv(const GLchar* _uniformVar, const glm::vec3& _arg0) const {
+			glUniform3fv(glGetUniformLocation(mHandle, _uniformVar), 1, glm::value_ptr(_arg0));
 		}
 
 		GLuint get_handle() const { return mHandle; }

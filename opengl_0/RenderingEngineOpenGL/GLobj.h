@@ -46,7 +46,7 @@ namespace cckit
 		bool load_model(std::function<void(std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&)> _config
 			= [](std::vector<GLvertex>&, std::vector<GLuint>&, std::vector<GLtexture>&) {});
 		
-		const glm::mat4& model_mat() const { return mModelMat; }
+		const glm::mat4& model_mat() const { return mMatModel; }
 		GLmodel* model_ptr() const { return mpRenderer->mpModel; }
 		GLrenderer* renderer_ptr() const { return mpRenderer; }
 
@@ -127,8 +127,8 @@ namespace cckit
 		glm::vec3 mTargetPos;
 		glm::facing_mode mFacingMode;
 
-		mutable glm::mat4 mModelMat;
-		mutable glm::mat4 mOutlineModelMat;
+		mutable glm::mat4 mMatModel;
+		mutable glm::mat4 mMatOutlineModel;
 		mutable GLfloat mCoordAxes1D[54];// 6:3:3 <=> vertAttribs : verts : coordAxes
 
 		std::unordered_set<GLbehavior*> mBehaviors;
@@ -147,7 +147,7 @@ namespace cckit
 	std::unordered_set<GLobj*> GLobj::mObjs;
 
 	inline GLobj::GLobj()
-		: mpRenderer(nullptr), mbFacingTarget(false), mModelMat()
+		: mpRenderer(nullptr), mbFacingTarget(false), mMatModel()
 		, mLocalPosition(0.0f), mlocalRotation(0.0f), mLocalScale(1.0f)
 		, mPosition(0.0f), mRotation(0.0f), mScale(1.0f)
 		, mForward(M_FORWARD_AXIS[0], M_FORWARD_AXIS[1], M_FORWARD_AXIS[2])
@@ -327,12 +327,12 @@ namespace cckit
 		glm::vec3 scale = mLocalScale * mScale;
 
 		mPosition = mUnmodifiedPosition;
-		mModelMat = glm::mat4();
+		mMatModel = glm::mat4();
 		// scale => rotate => translate
 		glm::mat4 translateMat;
 		mTranslateFunc(translateMat);
 		mPosition = translateMat * mPosition;
-		mModelMat = glm::translate(mModelMat, mPosition);
+		mMatModel = glm::translate(mMatModel, mPosition);
 
 		glm::mat4 rotateMat;
 		mRotateFunc(rotateMat);
@@ -344,17 +344,17 @@ namespace cckit
 			//rotateMat = glm::lookAtRH(glm::vec3(0), mTargetPos - mPosition);
 			rotateMat = glm::lookAt(mPosition, mTargetPos, mFacingMode);
 		}
-		mModelMat *= rotateMat;
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.x), glm::vec3(1, 0, 0));
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.y), glm::vec3(0, 1, 0));
-		mModelMat = glm::rotate(mModelMat, glm::radians(mlocalRotation.z), glm::vec3(0, 0, 1));
+		mMatModel *= rotateMat;
+		mMatModel = glm::rotate(mMatModel, glm::radians(mlocalRotation.x), glm::vec3(1, 0, 0));
+		mMatModel = glm::rotate(mMatModel, glm::radians(mlocalRotation.y), glm::vec3(0, 1, 0));
+		mMatModel = glm::rotate(mMatModel, glm::radians(mlocalRotation.z), glm::vec3(0, 0, 1));
 
-		mScaleFunc(mModelMat);
-		mModelMat = glm::scale(mModelMat, scale);
+		mScaleFunc(mMatModel);
+		mMatModel = glm::scale(mMatModel, scale);
 		//! scale => rotate => translate
-		_outlineModelMatConfig(mOutlineModelMat = mModelMat);
-		mOutlineModelMat = glm::translate(mOutlineModelMat, -mLocalCenter);// symmetry
-		mModelMat = glm::translate(mModelMat, -mLocalCenter);// symmetry
+		_outlineModelMatConfig(mMatOutlineModel = mMatModel);
+		mMatOutlineModel = glm::translate(mMatOutlineModel, -mLocalCenter);// symmetry
+		mMatModel = glm::translate(mMatModel, -mLocalCenter);// symmetry
 
 		mForward = rotateMat * M_FORWARD_AXIS;
 		mRight = rotateMat * M_RIGHT_AXIS;

@@ -2,6 +2,7 @@
 #define CCKIT_UTILS_H
 
 #include <glad/glad.h>
+#include <stack>
 #include "GLbase.h"
 #include "GLmatrixTransform.h"
 
@@ -90,8 +91,17 @@ namespace cckit
 		(const_cast<GLbase&>(_base)).destroy();
 	}
 
+#pragma region GLframebufferBase
+	class GLframebufferBase 
+	{
+	public:
+		virtual void set_active() = 0;
+		virtual void push_texture(GLenum _texture) = 0;
+	};
+#pragma endregion GLframebufferBase
+
 #pragma region GLframebuffer
-	class GLframebuffer
+	class GLframebuffer : public GLframebufferBase
 	{
 	public:
 		GLframebuffer(int _screenWidth, int _screenHeight);
@@ -100,13 +110,8 @@ namespace cckit
 			glDeleteTextures(1, &mTextureColorHandle);
 			glDeleteRenderbuffers(1, &mRboDepthStencilHandle);
 		}
-		template<bool Active>
 		void set_active() {
 			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
-		}
-		template<>
-		void set_active<false>() {
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		void push_texture(GLenum _texture);
 	private:
@@ -141,7 +146,7 @@ namespace cckit
 #pragma endregion GLframebuffer
 
 #pragma region GLframebufferDepthMap
-	class GLframebufferDepthMap
+	class GLframebufferDepthMap : public GLframebufferBase
 	{
 	public:
 		GLframebufferDepthMap(GLuint _width, GLuint _height);
@@ -149,17 +154,10 @@ namespace cckit
 			glDeleteFramebuffers(1, &mFboHandle);
 			glDeleteTextures(1, &mDepthMapHandle);
 		}
-		template<bool Active>
 		void set_active() {
 			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
 		}
-		template<>
-		void set_active<false>() {
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-		void push_depthmap(GLenum _texture);
-
-		glm::mat4 GetDepthMapSpaceMatrix(const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const;
+		void push_texture(GLenum _texture);
 	private:
 		GLuint mFboHandle, mDepthMapHandle;
 	};
@@ -179,17 +177,48 @@ namespace cckit
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	void GLframebufferDepthMap::push_depthmap(GLenum _texture) {
+	void GLframebufferDepthMap::push_texture(GLenum _texture) {
 		glActiveTexture(_texture);
 		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
 	}
-	glm::mat4 GLframebufferDepthMap::GetDepthMapSpaceMatrix(
-		const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) const {
-		glm::mat4 matProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
-		glm::mat4 matView = glm::lookAtRH(_vOriginPos, _vOriginPos + _vDir);
-		return matProjection * matView;
-	}
+	
 #pragma endregion GLframebufferDepthMap
+
+#pragma region GLframebufferStack
+	template<typename T>
+	class GLframebufferStackBase 
+	{
+	public:
+		GLframebufferStackBase();
+		void push(T& _fbo);
+		void pop();
+	private:
+		std::stack<T*> mFboStack;
+	};
+	typedef GLframebufferStackBase<GLframebufferBase> GLframebufferStack;
+
+	template<typename T>
+	GLframebufferStackBase<T>::GLframebufferStackBase() 
+		: mFboStack()
+	{}
+	template<typename T>
+	void GLframebufferStackBase<T>::push(T& _fbo) {
+		mFboStack.push(&_fbo);
+		_fbo.set_active();
+	}
+	template<typename T>
+	void GLframebufferStackBase<T>::pop() {
+		assert((mFboStack.size() > 0));
+		mFboStack.pop();
+		if (mFboStack.size() > 0) {
+			T& top = *mFboStack.top();
+			top.set_active();
+		}
+		else 
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+#pragma endregion GLframebufferStack
 
 #pragma region GLquad
 	class GLquad
@@ -275,6 +304,13 @@ namespace cckit
 		_bitangent.z = scale * (-deltaUV1.x * deltaP0.z + deltaUV0.x * deltaP1.z);
 		_tangent = glm::normalize(_tangent);
 		_bitangent = glm::normalize(_bitangent);
+	}
+
+	glm::mat4 glGetDepthMapSpaceMatrix(
+		const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) {
+		glm::mat4 matProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
+		glm::mat4 matView = glm::lookAtRH(_vOriginPos, _vOriginPos + _vDir);
+		return matProjection * matView;
 	}
 }
 

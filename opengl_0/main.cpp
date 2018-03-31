@@ -1,3 +1,5 @@
+#include "cckitdef.h"
+
 #include "RenderingEngineOpenGL/GLconfig.h"
 #include "RenderingEngineOpenGL/GLshader.h"
 #include "RenderingEngineOpenGL/GLmodel.h"
@@ -67,6 +69,104 @@ int main() {
 cckit::BehaviorLamp lampBehavior;
 float heightScale = 0.1f;
 
+void fps_assimp2(GLFWwindow* _pWindow)
+{
+	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(_pWindow, [](GLFWwindow* pWindow, double posX, double posY) {
+		static bool bFirstEntry = true;
+		static float lastPosX, lastPosY;
+		if (bFirstEntry) {
+			bFirstEntry = false;
+			lastPosX = posX;
+			lastPosY = posY;
+		}
+
+		float offsetX = posX - lastPosX
+			, offsetY = lastPosY - posY;
+		lastPosX = posX;
+		lastPosY = posY;
+
+		camera.process_mouse(offsetX, offsetY);
+	});
+
+	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderDepthMap = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderDepthDebug = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
+	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
+	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
+	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs");
+	pShaderDepthDebug->load("Shaders/ShaderDepthDebug.vs", "Shaders/ShaderDepthDebug.fs");
+	setup_fsConfigs();
+
+	cckit::GLfactory<cckit::GLobj> objFactory;
+	cckit::GLobj& spider = cckit::GenPrefabSpider(cckit::ConfigPrefabSpider0);
+	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
+	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
+	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
+	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);
+	cckit::GLobj& skybox = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox0);
+	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
+	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
+
+#ifdef POSTPROCESS_ENABLED
+	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
+	cckit::GLquad quad;
+	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
+#endif
+
+	float deltaTime
+		, lastFrameTime = glfwGetTime();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	while (!glfwWindowShouldClose(_pWindow)) {// loop
+		float currentFrameTime = glfwGetTime();
+		deltaTime = currentFrameTime - lastFrameTime;
+		lastFrameTime = currentFrameTime;
+
+		process_keyboard(_pWindow, camera, deltaTime);
+
+#ifdef POSTPROCESS_ENABLED
+		fbo.set_active();
+#endif
+
+		glEnable(GL_DEPTH_TEST);
+
+		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		cckit::GLobj::globally_start_behaviors();
+		cckit::GLobj::globally_update_behaviors(deltaTime);
+		cckit::GLobj::globally_render(&camera
+			, [](cckit::GLcamera& _camera) {
+			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_shader_outline(*pShaderOutline);
+			_camera.set_shader_coord_axes(*pShaderCoordAxes);
+		}
+			, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+			_camera.render(_obj);
+		});
+
+		glDisable(GL_DEPTH_TEST);
+
+#ifdef POSTPROCESS_ENABLED
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		pShaderScreen->use();
+		quad.prepare();
+		fbo.push_texture(GL_TEXTURE0);
+		quad.render(GL_FILL);
+#endif
+
+		glfwSwapBuffers(_pWindow);
+		glfwPollEvents();
+	}//! loop
+
+	cckit::GLmodel::unload();
+	cckit::GLshader::unload();
+}
+
 void fps_assimp(GLFWwindow* _pWindow)
 {
 	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -91,10 +191,12 @@ void fps_assimp(GLFWwindow* _pWindow)
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderDepthMap = cckit::GLfactory<cckit::GLshader>::generate();
+	pShaderDepthDebug = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
 	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
 	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs");
+	pShaderDepthDebug->load("Shaders/ShaderDepthDebug.vs", "Shaders/ShaderDepthDebug.fs");
 	setup_fsConfigs();
 
 	cckit::GLfactory<cckit::GLobj> objFactory;
@@ -107,20 +209,26 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
 
+	cckit::GLframebufferStack fboStack;
+
 #ifdef POSTPROCESS_ENABLED
 	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
 	cckit::GLquad quad;
-#endif
-
 	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
+#endif
 
 #ifdef SHADOW_MAPPING_ENABLED
 	cckit::GLframebufferDepthMap depthMapFbo(1024, 1024);
+	cckit::GLquad quad2;
+	pShaderDepthDebug->set1i("depthMap", 0);
+
+	glm::mat4 lightSpaceMatrix = cckit::glGetDepthMapSpaceMatrix(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 10, 75);
 #endif
 
 	float deltaTime
 		, lastFrameTime = glfwGetTime();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	while (!glfwWindowShouldClose(_pWindow)) {// loop
 		float currentFrameTime = glfwGetTime();
 		deltaTime = currentFrameTime - lastFrameTime;
@@ -128,56 +236,18 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		process_keyboard(_pWindow, camera, deltaTime);
 
-#ifdef SHADOW_MAPPING_ENABLED
-		glm::mat4 lightProjection, lightView;
-		glm::mat4 lightSpaceMatrix;
-		float near_plane = 1.0f, far_plane = 7.5f;
-		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-		lightView = glm::lookAt(dirLightDir, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-		lightSpaceMatrix = lightProjection * lightView;
-		// render scene from light's point of view
-		pShaderDepthMap->use();
-		pShaderDepthMap->setmatrix4fv("lightSpaceMatrix", 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-		pShaderDepthMap->set1i("texture2", 0);
-
-		depthMapFbo.set_active<true>();
-		glViewport(0, 0, 1024, 1024);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		cckit::GLobj::globally_render(&camera
-			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-			_camera.set_shader_outline(*pShaderOutline);
-			_camera.set_shader_coord_axes(*pShaderCoordAxes);
-		}
-			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
-			_camera.render(_obj);
-		});
-
-
-		cckit::GLquad quad2;
-
-		glClear(GL_COLOR_BUFFER_BIT);
-		pShaderDepthMap->use();
-		glActiveTexture(GL_TEXTURE0);
-		quad2.prepare();
-		depthMapFbo.push_depthmap(GL_TEXTURE0);
-		quad2.render(GL_FILL);
-
-		depthMapFbo.set_active<false>();
-
-		glfwSwapBuffers(_pWindow);
-		glfwPollEvents();
-
-		continue;
-#endif
-
 #ifdef POSTPROCESS_ENABLED
-		fbo.set_active<true>();
+		fboStack.push(fbo);
 #endif
 
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+#ifdef SHADOW_MAPPING_ENABLED
+		fboStack.push(depthMapFbo);
+		glClear(GL_DEPTH_BUFFER_BIT);
+#endif
 
 		cckit::GLobj::globally_start_behaviors();
 		cckit::GLobj::globally_update_behaviors(deltaTime);
@@ -187,14 +257,29 @@ void fps_assimp(GLFWwindow* _pWindow)
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
-			, [](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+			, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+#ifndef SHADOW_MAPPING_ENABLED
 			_camera.render(_obj);
+#else
+			pShaderDepthMap->use();
+			_camera.render(_obj);
+			//_camera.render2depthMap(_obj, lightSpaceMatrix, *pShaderDepthMap);
+#endif
 		});
-
+		
 		glDisable(GL_DEPTH_TEST);
 
+#ifdef SHADOW_MAPPING_ENABLED
+		fboStack.pop();
+
+		pShaderDepthDebug->use();
+		quad2.prepare();
+		depthMapFbo.push_texture(GL_TEXTURE0); 
+		quad2.render(GL_FILL);
+#endif
+
 #ifdef POSTPROCESS_ENABLED
-		fbo.set_active<false>();
+		fboStack.pop();
 		glClear(GL_COLOR_BUFFER_BIT);
 		pShaderScreen->use();
 		quad.prepare();
@@ -253,31 +338,31 @@ void setup_fsConfigs() {
 			, spotLightAmbient = dirLightDiffuse * glm::vec3(0.2f)
 			, spotLightSpecular = glm::vec3(1.0f);
 
-		_shader.set3fv("dirLight.dir", glm::value_ptr(dirLightDir));
-		_shader.set3fv("dirLight.ambient", glm::value_ptr(dirLightAmbient));
-		_shader.set3fv("dirLight.diffuse", glm::value_ptr(dirLightDiffuse));
-		_shader.set3fv("dirLight.specular", glm::value_ptr(dirLightSpecular));
+		_shader.set3fv("dirLight.dir", dirLightDir);
+		_shader.set3fv("dirLight.ambient", dirLightAmbient);
+		_shader.set3fv("dirLight.diffuse", dirLightDiffuse);
+		_shader.set3fv("dirLight.specular", dirLightSpecular);
 
-		_shader.set3fv("ptLight.pos", glm::value_ptr(lampBehavior.obj().position()));
-		_shader.set3fv("ptLight.ambient", glm::value_ptr(ptLightAmbient));
-		_shader.set3fv("ptLight.diffuse", glm::value_ptr(ptLightDiffuse));
-		_shader.set3fv("ptLight.specular", glm::value_ptr(ptLightSpecular));
+		_shader.set3fv("ptLight.pos", lampBehavior.obj().position());
+		_shader.set3fv("ptLight.ambient", ptLightAmbient);
+		_shader.set3fv("ptLight.diffuse", ptLightDiffuse);
+		_shader.set3fv("ptLight.specular", ptLightSpecular);
 		_shader.set1f("ptLight.attenConstant", 1.0f);
 		_shader.set1f("ptLight.attenLinear", 0.09f);
 		_shader.set1f("ptLight.attenQuadratic", 0.032f);
 
-		_shader.set3fv("spotLight.pos", glm::value_ptr(camera.pos()));
-		_shader.set3fv("spotLight.dir", glm::value_ptr(camera.forward()));
+		_shader.set3fv("spotLight.pos", camera.pos());
+		_shader.set3fv("spotLight.dir", camera.forward());
 		_shader.set1f("spotLight.innerCutoffCosine", glm::cos(glm::radians(8.0f)));
 		_shader.set1f("spotLight.outerCutoffCosine", glm::cos(glm::radians(11.0f)));
-		_shader.set3fv("spotLight.ambient", glm::value_ptr(spotLightAmbient));
-		_shader.set3fv("spotLight.diffuse", glm::value_ptr(spotLightDiffuse));
-		_shader.set3fv("spotLight.specular", glm::value_ptr(spotLightSpecular));
+		_shader.set3fv("spotLight.ambient", spotLightAmbient);
+		_shader.set3fv("spotLight.diffuse", spotLightDiffuse);
+		_shader.set3fv("spotLight.specular", spotLightSpecular);
 		_shader.set1f("spotLight.attenConstant", 1.0f);
 		_shader.set1f("spotLight.attenLinear", 0.09f);
 		_shader.set1f("spotLight.attenQuadratic", 0.032f);
 
-		_shader.set3fv("viewPos", glm::value_ptr(camera.pos()));
+		_shader.set3fv("viewPos", camera.pos());
 	};
 	auto fsGlobalConfigTextureNM
 		= [&fsGlobalConfig](const cckit::GLshader& _shader) {
@@ -287,13 +372,13 @@ void setup_fsConfigs() {
 
 	auto fsLocalConfigTexture
 		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
-		_shader.set3fv("material1.specular", glm::value_ptr(_renderer.mSpecularColor));
+		_shader.set3fv("material1.specular", _renderer.mSpecularColor);
 		_shader.set1i("material1.shininess", _renderer.mShininess);
 	};
 	auto fsLocalConfigDiffuse
 		= [](const cckit::GLshader& _shader, const cckit::GLrenderer& _renderer) {
-		_shader.set3fv("material.diffuse", glm::value_ptr(_renderer.mDiffuseColor));
-		_shader.set3fv("material.specular", glm::value_ptr(_renderer.mSpecularColor));
+		_shader.set3fv("material.diffuse", _renderer.mDiffuseColor);
+		_shader.set3fv("material.specular", _renderer.mSpecularColor);
 		_shader.set1i("material.shininess", _renderer.mShininess);
 	};
 	auto fsLocalConfigTextureNM

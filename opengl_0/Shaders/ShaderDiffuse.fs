@@ -36,5 +36,6 @@ void main()
 #endif
 
     fragColor = vec4(finalColor, 1.0);
+    //fragColor = vec4(vec3(pow(gl_FragCoord.z, 10)), 1.0);
 }
 /////////////material1.diffuse

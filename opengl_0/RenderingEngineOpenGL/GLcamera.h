@@ -67,6 +67,7 @@ namespace cckit
 		void set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far);
 
 		void render(const GLobj& _obj, GLenum _renderMode = GL_FILL) const;
+		void render2depthMap(const GLobj& _obj, const glm::mat4& _matDepthSpace, GLshader& _shaderDepthMap) const;
 
 		const glm::vec3& pos() const { return mPos; }
 		const glm::vec3& forward() const { return mForward; }
@@ -117,35 +118,51 @@ namespace cckit
 			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
 		});
 
-		const glm::mat4& modelMat = _obj.mModelMat
-			, outlineModelMat = _obj.mOutlineModelMat;
-		glm::mat4 normalModelMat = glm::transpose(glm::inverse(modelMat));
+		const glm::mat4& matModel = _obj.mMatModel
+			, matOutlineModel = _obj.mMatOutlineModel;
+		glm::mat4 matNormalModel = glm::transpose(glm::inverse(matModel));
 		// render model and outline
 		glPolygonMode(GL_FRONT_AND_BACK, _renderMode);
 		_obj.RenderModel(
 			*_obj.mpShader
-			, [this, &modelMat, &normalModelMat](const GLshader& _shader) {
+			, [&](const GLshader& _shader) {
 			_shader.use();
-			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(modelMat));
-			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
-			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, glm::value_ptr(normalModelMat));
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matModel);
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, matNormalModel);
 			_shader.mFsGlobalConfig(_shader);
 		}
 			, mpShaderOutline
-			, [this, &outlineModelMat, &_obj](const GLshader& _shader) {
+			, [&](const GLshader& _shader) {
 			_shader.use();
-			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(outlineModelMat));
-			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
-			_shader.set3fv("monoColor", glm::value_ptr(_obj.mOutlineColor));
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matOutlineModel);
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+			_shader.set3fv("monoColor", _obj.mOutlineColor);
 		});
 		// render coord axes
 		_obj.RenderCoordAxes(*mpShaderCoordAxes, [this](const GLshader& _shader) {
 			_shader.use();
-			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::value_ptr(glm::mat4()));
-			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, glm::value_ptr(get_view_matrix()));
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, glm::value_ptr(mProjectionMat));
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::mat4());
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+		});
+	}
+
+	void GLcamera::render2depthMap(const GLobj& _obj, const glm::mat4& _matDepthSpace, GLshader& _shaderDepthMap) const {
+		if (!_obj.mpShader || !_obj.behaviors_started() || _obj.destroyed()) return;
+
+		const glm::mat4& matModel = _obj.mMatModel;
+		_obj.RenderModel(
+			_shaderDepthMap
+			, [&](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matModel);
+			_shader.setmatrix4fv("matDepthMapSpace", 1, GL_FALSE, _matDepthSpace);
+		}
+			, mpShaderOutline
+			, [](const GLshader& _shader) {
 		});
 	}
 }
