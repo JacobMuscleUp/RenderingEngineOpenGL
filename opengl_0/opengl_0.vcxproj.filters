@@ -217,5 +217,8 @@
     <None Include="Shaders\ShaderDepthDebug.vs">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\shadow.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

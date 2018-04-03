@@ -3,6 +3,7 @@
 //#pragma include "Shaders/utils.glsl"
 #define SHADING_TEXTURE_POM
 #pragma include "Shaders/lighting.glsl"
+#pragma include "Shaders/shadow.glsl"
 
 #define GAMMA 2.2
 #define PARALLAX_MAPPING
@@ -10,11 +11,13 @@
 #define PARALLAX_OCCLUSION_MAPPING
 #define POM_MIN_LAYERS 8
 #define POM_MAX_LAYERS 32
+//#define SHADOW
 
 in VS_OUT {
     vec2 texCoords;
 	vec3 fragPos;
 	mat3 matTBN;
+    vec3 fragPosLightSpace;////
 } fs_in;
 
 out vec4 fragColor;
@@ -26,6 +29,12 @@ uniform SpotLight spotLight;
 uniform vec3 viewPos; 
 uniform mat4 normalModelMat;
 uniform float heightScale;
+
+#ifdef SHADOW
+uniform sampler2D depthMap;////
+#endif
+
+
 
 ////////////////////////////////MAIN////////////////////////////////
 ////////////////////////////////MAIN////////////////////////////////
@@ -57,6 +66,10 @@ void main()
 
 #ifdef GAMMA
     finalColor = pow(finalColor, vec3(1.0/GAMMA));
+#endif
+
+#ifdef SHADOW
+    finalColor = (1.0 - InShadow(depthMap, fs_in.fragPosLightSpace)) * finalColor;////
 #endif
 
     fragColor = vec4(finalColor, 1.0);

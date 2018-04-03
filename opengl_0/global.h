@@ -16,5 +16,6 @@ cckit::GLshader* pShaderDepthDebug;
 cckit::GLcamera camera(glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
 glm::vec3 dirLightDir(10000, -10000, 10000);
 cckit::GLlight ptLights[1]{ cckit::GLlight(glm::vec3(0, 0, -2), glm::vec3(1, 1, 1)) };
+glm::mat4 lightSpaceMatrix;
 
 #endif // !CCKIT_GLOBAL_H

@@ -186,6 +186,7 @@
     <None Include="Shaders\shaderMonoColor1.vs" />
     <None Include="Shaders\shaderSkybox.fs" />
     <None Include="Shaders\shaderSkybox.vs" />
+    <None Include="Shaders\shadow.glsl" />
     <None Include="Shaders\utils.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

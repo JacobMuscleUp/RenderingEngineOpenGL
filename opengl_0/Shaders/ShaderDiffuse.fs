@@ -2,13 +2,16 @@
 #pragma include "Shaders/utils.glsl"
 #define SHADING_DIFFUSE
 #pragma include "Shaders/lighting.glsl"
+#pragma include "Shaders/shadow.glsl"
 
 #define GAMMA 2.2
+#define SHADOW
 
 in VS_OUT {
     vec2 texCoords;
 	vec3 fragPos;
 	vec3 normal;
+    vec3 fragPosLightSpace;////
 } fs_in;
 
 out vec4 fragColor;
@@ -18,6 +21,10 @@ uniform DirectionalLight dirLight;
 uniform PointLight ptLight;
 uniform SpotLight spotLight;
 uniform vec3 viewPos; 
+
+#ifdef SHADOW
+uniform sampler2D depthMap;////
+#endif
 
 ////////////////////////////////MAIN////////////////////////////////
 ////////////////////////////////MAIN////////////////////////////////
@@ -35,7 +42,10 @@ void main()
     finalColor = pow(finalColor, vec3(1.0/GAMMA));
 #endif
 
+#ifdef SHADOW
+    finalColor = (1.0 - InShadow(depthMap, fs_in.fragPosLightSpace)) * finalColor;////
+#endif
+
     fragColor = vec4(finalColor, 1.0);
-    //fragColor = vec4(vec3(pow(gl_FragCoord.z, 10)), 1.0);
 }
 /////////////material1.diffuse

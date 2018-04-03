@@ -305,13 +305,6 @@ namespace cckit
 		_tangent = glm::normalize(_tangent);
 		_bitangent = glm::normalize(_bitangent);
 	}
-
-	glm::mat4 glGetDepthMapSpaceMatrix(
-		const glm::vec3& _vOriginPos, const glm::vec3& _vDir, float _nearPlane, float _farPlane) {
-		glm::mat4 matProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, _nearPlane, _farPlane);
-		glm::mat4 matView = glm::lookAtRH(_vOriginPos, _vOriginPos + _vDir);
-		return matProjection * matView;
-	}
 }
 
 #endif // !CCKIT_UTILS_H

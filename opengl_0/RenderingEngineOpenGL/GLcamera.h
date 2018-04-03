@@ -34,7 +34,7 @@ namespace cckit
 			: mPos(_pos), mWorldUp(_worldUp), mForward(glm::vec3(0, 0, -1)), mYaw(_yaw), mPitch(_pitch)
 			, mMoveSpeed(_moveSpeed), mRotateSpeed(_rotateSpeed), mZoomSpeed(_zoomSpeed)
 			, mpShaderOutline(nullptr), mpShaderCoordAxes(nullptr)
-			, mProjectionMat() {
+			, mMatProjection() {
 			UpdateCoordAxes();
 		}
 
@@ -91,7 +91,7 @@ namespace cckit
 
 		const GLshader* mpShaderOutline;
 		const GLshader* mpShaderCoordAxes;
-		glm::mat4 mProjectionMat;
+		glm::mat4 mMatProjection;
 	};
 	const float GLcamera::YAW = 0.0f;
 	const float GLcamera::PITCH = 0.0f;
@@ -108,7 +108,7 @@ namespace cckit
 	}
 
 	void GLcamera::set_perspective(GLfloat _fov, GLfloat _aspect, GLfloat _near, GLfloat _far) {
-		mProjectionMat = glm::perspective(glm::radians(_fov), _aspect, _near, _far);
+		mMatProjection = glm::perspective(glm::radians(_fov), _aspect, _near, _far);
 	}
 
 	void GLcamera::render(const GLobj& _obj, GLenum _renderMode) const {
@@ -129,7 +129,7 @@ namespace cckit
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matModel);
 			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mMatProjection);
 			_shader.setmatrix4fv("normalModelMat", 1, GL_FALSE, matNormalModel);
 			_shader.mFsGlobalConfig(_shader);
 		}
@@ -138,7 +138,7 @@ namespace cckit
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matOutlineModel);
 			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mMatProjection);
 			_shader.set3fv("monoColor", _obj.mOutlineColor);
 		});
 		// render coord axes
@@ -146,23 +146,43 @@ namespace cckit
 			_shader.use();
 			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::mat4());
 			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, get_view_matrix());
-			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mProjectionMat);
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mMatProjection);
 		});
 	}
 
-	void GLcamera::render2depthMap(const GLobj& _obj, const glm::mat4& _matDepthSpace, GLshader& _shaderDepthMap) const {
+	void GLcamera::render2depthMap(const GLobj& _obj, const glm::mat4& _matDepthMapSpace, GLshader& _shaderDepthMap) const {
 		if (!_obj.mpShader || !_obj.behaviors_started() || _obj.destroyed()) return;
 
-		const glm::mat4& matModel = _obj.mMatModel;
+		_obj.PrepareRenderStates([&_obj](glm::mat4& _mat) {
+			_mat = glm::scale(_mat, glm::vec3(_obj.mOutlineScale));
+		});
+
+		const glm::mat4& matModel = _obj.mMatModel
+			, matOutlineModel = _obj.mMatOutlineModel;
+		// render model and outline
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		_obj.RenderModel(
 			_shaderDepthMap
 			, [&](const GLshader& _shader) {
 			_shader.use();
-			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matModel);
-			_shader.setmatrix4fv("matDepthMapSpace", 1, GL_FALSE, _matDepthSpace);
+			_shader.setmatrix4fv("matModel", 1, GL_FALSE, matModel);
+			_shader.setmatrix4fv("matDepthMapSpace", 1, GL_FALSE, _matDepthMapSpace);
+			_shader.setmatrix4fv("matProjection", 1, GL_FALSE, mMatProjection);
 		}
 			, mpShaderOutline
-			, [](const GLshader& _shader) {
+			, [&](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, matOutlineModel);
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, _matDepthMapSpace);
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mMatProjection);
+			_shader.set3fv("monoColor", _obj.mOutlineColor);
+		});
+		// render coord axes
+		_obj.RenderCoordAxes(*mpShaderCoordAxes, [&](const GLshader& _shader) {
+			_shader.use();
+			_shader.setmatrix4fv("modelMat", 1, GL_FALSE, glm::mat4());
+			_shader.setmatrix4fv("viewMat", 1, GL_FALSE, _matDepthMapSpace);
+			_shader.setmatrix4fv("projectionMat", 1, GL_FALSE, mMatProjection);
 		});
 	}
 }
