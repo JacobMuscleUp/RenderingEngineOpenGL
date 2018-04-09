@@ -5,11 +5,11 @@ out VS_OUT {
 	vec3 texCoords;
 } vs_out;
 
-uniform mat4 projectionMat;
-uniform mat4 viewMat;
+uniform mat4 matProjection;
+uniform mat4 matView;
 
 void main()
 {
 	vs_out.texCoords = aPos;
-	gl_Position = projectionMat * viewMat * vec4(aPos, 1.0);
+	gl_Position = matProjection * matView * vec4(aPos, 1.0);
 }

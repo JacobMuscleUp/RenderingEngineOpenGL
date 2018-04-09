@@ -5,12 +5,12 @@ layout (location = 2) in vec2 aTexCoord;
 
 out vec2 texCoord;
 
-uniform mat4 modelMat;
-uniform mat4 viewMat;
-uniform mat4 projectionMat;
+uniform mat4 matModel;
+uniform mat4 matView;
+uniform mat4 matProjection;
 
 void main()
 {
     texCoord = aTexCoord;    
-    gl_Position = projectionMat * viewMat * modelMat * vec4(aPos, 1.0);
+    gl_Position = matProjection * matView * matModel * vec4(aPos, 1.0);
 }

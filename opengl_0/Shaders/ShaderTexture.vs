@@ -10,18 +10,18 @@ out VS_OUT {
 	vec3 normal;
 } vs_out;
 
-uniform mat4 modelMat;
-uniform mat4 viewMat;
-uniform mat4 projectionMat;
-uniform mat4 normalModelMat;
+uniform mat4 matModel;
+uniform mat4 matView;
+uniform mat4 matProjection;
+uniform mat4 matNormalModel;
 
 void main()
 {
-	vec4 worldPos = modelMat * vec4(aLocalPos, 1.0);
+	vec4 worldPos = matModel * vec4(aLocalPos, 1.0);
 	
 	vs_out.texCoords = aTexCoords;
 	vs_out.fragPos = vec3(worldPos);
-	vs_out.normal = normalize(mat3(normalModelMat) * aNormal);
+	vs_out.normal = normalize(mat3(matNormalModel) * aNormal);
 
-	gl_Position = projectionMat * viewMat * worldPos;
+	gl_Position = matProjection * matView * worldPos;
 }

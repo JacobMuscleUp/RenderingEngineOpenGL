@@ -140,7 +140,7 @@ void fps_assimp2(GLFWwindow* _pWindow)
 		cckit::GLobj::globally_update_behaviors(deltaTime);
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
@@ -187,8 +187,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 		camera.process_mouse(offsetX, offsetY);
 	});
 
-	//lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), glm::vec3(0.0f, -1.0f, 1.0f));
-	lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0f, 0.0f, 3.0f));
+	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
+	lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
 
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
@@ -257,16 +257,19 @@ void fps_assimp(GLFWwindow* _pWindow)
 		cckit::GLobj::globally_update_behaviors(deltaTime);
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-1.0f, 1.0f,  (float)-SCREEN_WIDTH / SCREEN_HEIGHT, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 100.0f);
+			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 1000.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
 			, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
 #ifndef SHADOW_MAPPING_ENABLED
 			_camera.render(_obj);
+			//_camera.render(_obj, lightSpaceMatrix);
 #else
 			//_camera.render(_obj);
 			_camera.render2depthMap(_obj, lightSpaceMatrix, *pShaderDepthMap);
+			//_camera.render2depthMap(_obj, _camera.get_view_matrix(), *pShaderDepthMap);
 #endif
 		});
 
@@ -281,7 +284,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 		cckit::GLobj::globally_update_behaviors(deltaTime);
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-1.0f, 1.0f, (float)-SCREEN_WIDTH / SCREEN_HEIGHT, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 100.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
@@ -333,6 +337,14 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() + glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
+	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) {
+		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _deltaTime);
+		lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+	}
+	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) {
+		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z - _deltaTime);
+		lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+	}
 
 	if (glfwGetKey(_pWindow, GLFW_KEY_N) == GLFW_PRESS)
 		heightScale -= _deltaTime;

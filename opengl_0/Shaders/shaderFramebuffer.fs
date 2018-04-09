@@ -27,8 +27,8 @@ const float blurKernalWeights[9]
 void main()
 {
     fragColor = vec4(texture(screenTexture, fs_in.texCoords).rgb, 1.0);// default post-processing
-    fragColor = ReinhardToneMapping(fragColor);
+    /*fragColor = ReinhardToneMapping(fragColor);
     fragColor = PostprocessInversion(fragColor);
     fragColor = PostprocessGrayscale(fragColor);
-    fragColor = PostprocessKernal(screenTexture, fs_in.texCoords, kernalOffset, blurKernalWeights);
+    fragColor = PostprocessKernal(screenTexture, fs_in.texCoords, kernalOffset, blurKernalWeights);*/
 } 

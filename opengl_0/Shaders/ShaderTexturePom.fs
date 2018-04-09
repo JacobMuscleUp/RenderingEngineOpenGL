@@ -11,7 +11,7 @@
 #define PARALLAX_OCCLUSION_MAPPING
 #define POM_MIN_LAYERS 8
 #define POM_MAX_LAYERS 32
-//#define SHADOW
+#define SHADOW
 
 in VS_OUT {
     vec2 texCoords;
@@ -27,7 +27,7 @@ uniform DirectionalLight dirLight;
 uniform PointLight ptLight;
 uniform SpotLight spotLight;
 uniform vec3 viewPos; 
-uniform mat4 normalModelMat;
+uniform mat4 matNormalModel;
 uniform float heightScale;
 
 #ifdef SHADOW
@@ -57,7 +57,7 @@ void main()
         discard;
 #endif
     vec3 normal = fs_in.matTBN * (texture(material1.normalMap, texCoords).rgb * 2.0 - 1.0);
-    normal = normalize(mat3(normalModelMat) * normal);
+    normal = normalize(mat3(matNormalModel) * normal);
 
     vec3 finalColor = vec3(0.0);
     finalColor += CalculateDirectionalLight(material1, fs_in.texCoords, viewDir, normal, viewPos, dirLight);
