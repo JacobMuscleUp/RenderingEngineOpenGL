@@ -24,6 +24,8 @@ void setup_fsConfigs();
 ///////////////////////////////////////////////////////////////////////////////////////////////
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
+const int SHADOW_RES_WIDTH = 2048;
+const int SHADOW_RES_HEIGHT = 2048;
 
 int main() {
 	int temp;
@@ -69,104 +71,6 @@ int main() {
 cckit::BehaviorLamp lampBehavior;
 float heightScale = 0.1f;
 
-void fps_assimp2(GLFWwindow* _pWindow)
-{
-	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(_pWindow, [](GLFWwindow* pWindow, double posX, double posY) {
-		static bool bFirstEntry = true;
-		static float lastPosX, lastPosY;
-		if (bFirstEntry) {
-			bFirstEntry = false;
-			lastPosX = posX;
-			lastPosY = posY;
-		}
-
-		float offsetX = posX - lastPosX
-			, offsetY = lastPosY - posY;
-		lastPosX = posX;
-		lastPosY = posY;
-
-		camera.process_mouse(offsetX, offsetY);
-	});
-
-	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
-	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
-	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
-	pShaderDepthMap = cckit::GLfactory<cckit::GLshader>::generate();
-	pShaderDepthDebug = cckit::GLfactory<cckit::GLshader>::generate();
-	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
-	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
-	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
-	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs");
-	pShaderDepthDebug->load("Shaders/ShaderDepthDebug.vs", "Shaders/ShaderDepthDebug.fs");
-	setup_fsConfigs();
-
-	cckit::GLfactory<cckit::GLobj> objFactory;
-	cckit::GLobj& spider = cckit::GenPrefabSpider(cckit::ConfigPrefabSpider0);
-	cckit::GLobj& bull = cckit::GenPrefabBull(cckit::ConfigPrefabBull0);
-	cckit::GLobj& lamp = cckit::GenPrefabLamp(cckit::ConfigPrefabLamp0);
-	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
-	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);
-	cckit::GLobj& skybox = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox0);
-	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
-	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
-
-#ifdef POSTPROCESS_ENABLED
-	cckit::GLframebuffer fbo(SCREEN_WIDTH, SCREEN_HEIGHT);
-	cckit::GLquad quad;
-	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
-#endif
-
-	float deltaTime
-		, lastFrameTime = glfwGetTime();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	while (!glfwWindowShouldClose(_pWindow)) {// loop
-		float currentFrameTime = glfwGetTime();
-		deltaTime = currentFrameTime - lastFrameTime;
-		lastFrameTime = currentFrameTime;
-
-		process_keyboard(_pWindow, camera, deltaTime);
-
-#ifdef POSTPROCESS_ENABLED
-		fbo.set_active();
-#endif
-
-		glEnable(GL_DEPTH_TEST);
-
-		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		cckit::GLobj::globally_start_behaviors();
-		cckit::GLobj::globally_update_behaviors(deltaTime);
-		cckit::GLobj::globally_render(&camera
-			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-			_camera.set_shader_outline(*pShaderOutline);
-			_camera.set_shader_coord_axes(*pShaderCoordAxes);
-		}
-			, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
-			_camera.render(_obj);
-		});
-
-		glDisable(GL_DEPTH_TEST);
-
-#ifdef POSTPROCESS_ENABLED
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear(GL_COLOR_BUFFER_BIT);
-		pShaderScreen->use();
-		quad.prepare();
-		fbo.push_texture(GL_TEXTURE0);
-		quad.render(GL_FILL);
-#endif
-
-		glfwSwapBuffers(_pWindow);
-		glfwPollEvents();
-	}//! loop
-
-	cckit::GLmodel::unload();
-	cckit::GLshader::unload();
-}
-
 void fps_assimp(GLFWwindow* _pWindow)
 {
 	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -188,8 +92,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 	});
 
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
-	lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
-
+	matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+	
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderScreen = cckit::GLfactory<cckit::GLshader>::generate();
@@ -221,10 +125,9 @@ void fps_assimp(GLFWwindow* _pWindow)
 #endif
 
 #ifdef SHADOW_MAPPING_ENABLED
-	cckit::GLframebufferDepthMap fboDepthMap(SCREEN_WIDTH, SCREEN_HEIGHT);
+	cckit::GLframebufferDepthMap fboDepthMap(SHADOW_RES_WIDTH, SHADOW_RES_HEIGHT);
 	cckit::GLquad quadFboDepthMap;
 	pShaderDepthDebug->set1i("depthMap", 0);
-
 	
 #endif
 
@@ -247,18 +150,21 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		glClearColor(0.2f, 0.2f, 0.2f, 0.5f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 #ifdef SHADOW_MAPPING_ENABLED
 		fboStack.push(fboDepthMap);
 		glClear(GL_DEPTH_BUFFER_BIT);
+		glViewport(0, 0, SHADOW_RES_WIDTH, SHADOW_RES_HEIGHT);
 #endif
 
 		cckit::GLobj::globally_start_behaviors();
 		cckit::GLobj::globally_update_behaviors(deltaTime);
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
-			_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-1.0f, 1.0f,  (float)-SCREEN_WIDTH / SCREEN_HEIGHT, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 100.0f);
-			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 1000.0f);
+			_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
+			//_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-1.0f, 1.0f, (float)-SCREEN_HEIGHT / SCREEN_WIDTH, (float)SCREEN_HEIGHT / SCREEN_WIDTH, 0.1f, 100.0f);
+			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
@@ -267,32 +173,36 @@ void fps_assimp(GLFWwindow* _pWindow)
 			_camera.render(_obj);
 			//_camera.render(_obj, lightSpaceMatrix);
 #else
-			//_camera.render(_obj);
-			_camera.render2depthMap(_obj, lightSpaceMatrix, *pShaderDepthMap);
+			_camera.render2depthMap(_obj, matViewLightSpace, *pShaderDepthMap);
 			//_camera.render2depthMap(_obj, _camera.get_view_matrix(), *pShaderDepthMap);
 #endif
 		});
 
+		glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 #ifdef SHADOW_MAPPING_ENABLED
 		fboStack.pop();
-		/*pShaderDepthDebug->use();
-		quadFboDepthMap.prepare();
-		fboDepthMap.push_texture(GL_TEXTURE0); 
-		quadFboDepthMap.render(GL_FILL);*/
-
-		cckit::GLobj::globally_start_behaviors();
-		cckit::GLobj::globally_update_behaviors(deltaTime);
-		cckit::GLobj::globally_render(&camera
-			, [](cckit::GLcamera& _camera) {
-			_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
-			_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-1.0f, 1.0f, (float)-SCREEN_WIDTH / SCREEN_HEIGHT, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 100.0f);
-			_camera.set_shader_outline(*pShaderOutline);
-			_camera.set_shader_coord_axes(*pShaderCoordAxes);
-		}
-			, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+		if (bDepthMapView) {
+			pShaderDepthDebug->use();
+			quadFboDepthMap.prepare();
 			fboDepthMap.push_texture(GL_TEXTURE0);
-			_camera.render(_obj);
-		});
+			quadFboDepthMap.render(GL_FILL);
+		}
+		else {
+			cckit::GLobj::globally_start_behaviors();
+			cckit::GLobj::globally_update_behaviors(deltaTime);
+			cckit::GLobj::globally_render(&camera
+				, [](cckit::GLcamera& _camera) {
+				_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+				_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
+				//_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-1.0f, 1.0f, (float)-SCREEN_HEIGHT / SCREEN_WIDTH, (float)SCREEN_HEIGHT / SCREEN_WIDTH, 0.1f, 100.0f);
+				_camera.set_shader_outline(*pShaderOutline);
+				_camera.set_shader_coord_axes(*pShaderCoordAxes);
+			}
+				, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
+				fboDepthMap.push_texture(GL_TEXTURE0);
+				_camera.render(_obj);
+			});
+		}
 #endif
 
 		glDisable(GL_DEPTH_TEST);
@@ -339,17 +249,30 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _deltaTime);
-		lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
 	}
 	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z - _deltaTime);
-		lightSpaceMatrix = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
 	}
 
 	if (glfwGetKey(_pWindow, GLFW_KEY_N) == GLFW_PRESS)
 		heightScale -= _deltaTime;
 	else if (glfwGetKey(_pWindow, GLFW_KEY_M) == GLFW_PRESS)
 		heightScale += _deltaTime;
+	if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
+		orthoScale -= _deltaTime;
+	else if (glfwGetKey(_pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		orthoScale += _deltaTime;
+	
+	static bool bKeyDownPressed = false;
+	if (glfwGetKey(_pWindow, GLFW_KEY_DOWN) == GLFW_PRESS
+		&& !bKeyDownPressed) {
+		bKeyDownPressed = true;
+		bDepthMapView = !bDepthMapView;
+	}
+	else if (glfwGetKey(_pWindow, GLFW_KEY_DOWN) == GLFW_RELEASE)
+		bKeyDownPressed = false;
 }
 
 void setup_fsConfigs() {
@@ -391,7 +314,7 @@ void setup_fsConfigs() {
 
 		_shader.set3fv("viewPos", camera.pos());
 
-		_shader.setmatrix4fv("matLightSpace", 1, GL_FALSE, lightSpaceMatrix);
+		_shader.setmatrix4fv("matViewLightSpace", 1, GL_FALSE, matViewLightSpace);
 		_shader.set1i("depthMap", 0);
 	};
 	auto fsGlobalConfigTextureNM

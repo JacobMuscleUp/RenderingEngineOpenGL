@@ -11,7 +11,7 @@ in VS_OUT {
     vec2 texCoords;
 	vec3 fragPos;
 	vec3 normal;
-    vec3 fragPosLightSpace;////
+    vec3 fragPosLightSpaceNDC;
 } fs_in;
 
 out vec4 fragColor;
@@ -23,7 +23,7 @@ uniform SpotLight spotLight;
 uniform vec3 viewPos; 
 
 #ifdef SHADOW
-uniform sampler2D depthMap;////
+uniform sampler2D depthMap;
 #endif
 
 ////////////////////////////////MAIN////////////////////////////////
@@ -43,9 +43,8 @@ void main()
 #endif
 
 #ifdef SHADOW
-    finalColor = (1.0 - InShadow(depthMap, fs_in.fragPosLightSpace)) * finalColor;////
+    finalColor = (1.0 - 0.7 * InShadow(depthMap, fs_in.fragPosLightSpaceNDC, fs_in.normal, normalize(dirLight.dir))) * finalColor;
 #endif
-
     fragColor = vec4(finalColor, 1.0);
 }
 /////////////material1.diffuse

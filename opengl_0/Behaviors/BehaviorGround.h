@@ -14,7 +14,8 @@ namespace cckit
 		BehaviorGround(std::function<void(this_type&)> _initConfig = [](this_type&) {}) : GLbehavior() { _initConfig(*this); }
 
 		void start() {
-			mpObj->set_position(glm::vec3(0, -1, 0));
+			//mpObj->set_position(glm::vec3(0, -1, 0));
+			mpObj->set_position(glm::vec3(0, -6, 0));
 			//mpObj->mRotation = glm::vec3(90, 0, 0);
 			mpObj->mScale = glm::vec3(5.0);
 			GLrenderer& rend = *mpObj->renderer_ptr();
