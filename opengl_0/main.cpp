@@ -7,6 +7,7 @@
 #include "RenderingEngineOpenGL/GLobj.h"
 #include "RenderingEngineOpenGL/GLutils.h"
 #include "RenderingEngineOpenGL/GLfactory.h"
+#include "RenderingEngineOpenGL/GLinput.h"
 
 #include "Behaviors/behaviors.h"
 #include "Prefabs/prefabs.h"
@@ -113,6 +114,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
 	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);
 	cckit::GLobj& skybox = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox0);
+	//cckit::GLobj& skybox0 = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox1);
 	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
 
@@ -264,15 +266,9 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		orthoScale -= _deltaTime;
 	else if (glfwGetKey(_pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		orthoScale += _deltaTime;
-	
-	static bool bKeyDownPressed = false;
-	if (glfwGetKey(_pWindow, GLFW_KEY_DOWN) == GLFW_PRESS
-		&& !bKeyDownPressed) {
-		bKeyDownPressed = true;
+
+	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_DOWN))
 		bDepthMapView = !bDepthMapView;
-	}
-	else if (glfwGetKey(_pWindow, GLFW_KEY_DOWN) == GLFW_RELEASE)
-		bKeyDownPressed = false;
 }
 
 void setup_fsConfigs() {

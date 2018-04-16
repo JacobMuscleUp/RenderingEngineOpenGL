@@ -1,6 +1,10 @@
 #ifndef CCKIT_GLOBAL_H
 #define CCKIT_GLOBAL_H
 
+#pragma comment(lib,"glfw3.lib")
+#pragma comment(lib,"opengl32.lib")
+#pragma comment(lib,"assimp-vc140-mt.lib")
+
 #include <glm/glm.hpp>
 #include "RenderingEngineOpenGL/GLcamera.h"
 #include "RenderingEngineOpenGL/GLlight.h"

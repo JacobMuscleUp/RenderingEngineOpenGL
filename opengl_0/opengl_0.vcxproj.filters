@@ -140,6 +140,9 @@
     <ClInclude Include="cckitdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLinput.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shaderLamp.vs">

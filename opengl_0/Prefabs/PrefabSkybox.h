@@ -47,6 +47,17 @@ namespace cckit
 		rend.mShininess = 32;
 		_obj.apply_renderer_config();// necessary since renderer configs are performed outside GLbehavior::start()
 	};
+
+	std::function<void(GLobj&)> ConfigPrefabSkybox1
+		= [](GLobj& _obj) {
+		_obj.set_position(glm::vec3(0, -3, 0));
+		_obj.mScale = glm::vec3(2);
+		cckit::GLrenderer& rend = *_obj.renderer_ptr();
+		rend.mDiffuseColor = glm::vec3(0, 1, 1);
+		rend.mSpecularColor = glm::vec3(1);
+		rend.mShininess = 32;
+		_obj.apply_renderer_config();// necessary since renderer configs are performed outside GLbehavior::start()
+	};
 }
 
 #endif // !CCKIT_PREFAB_SKYBOX_H

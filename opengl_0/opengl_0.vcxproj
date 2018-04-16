@@ -84,7 +84,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -152,6 +152,7 @@
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLconfig.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLinput.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLlight.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmesh.h" />
