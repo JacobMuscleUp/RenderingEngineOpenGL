@@ -48,7 +48,7 @@ namespace cckit
 
 	std::function<void(GLobj&)> ConfigPrefabGround0
 		= [](GLobj& _obj) {
-		_obj.set_position(glm::vec3(0, -2, 0));
+		_obj.set_position(glm::vec3(0, -6, 0));
 		_obj.mScale = glm::vec3(4);
 		cckit::GLrenderer& rend = *_obj.renderer_ptr();
 		rend.mDiffuseColor = glm::vec3(1, 0, 0);

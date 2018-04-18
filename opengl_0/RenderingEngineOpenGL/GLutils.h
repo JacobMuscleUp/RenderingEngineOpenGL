@@ -151,17 +151,38 @@ namespace cckit
 	public:
 		GLframebufferDepthMap(GLuint _width, GLuint _height);
 		~GLframebufferDepthMap() {
-			glDeleteFramebuffers(1, &mFboHandle);
-			glDeleteTextures(1, &mDepthMapHandle);
+			Clear();
 		}
 		void set_active() {
 			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
 		}
 		void push_texture(GLenum _texture);
+		void set_res(GLuint _width, GLuint _height);
+	private:
+		void Clear();
+		void Init(GLuint _width, GLuint _height);
 	private:
 		GLuint mFboHandle, mDepthMapHandle;
 	};
 	GLframebufferDepthMap::GLframebufferDepthMap(GLuint _width, GLuint _height) {
+		Init(_width, _height);
+	}
+	void GLframebufferDepthMap::push_texture(GLenum _texture) {
+		glActiveTexture(_texture);
+		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
+	}
+
+	void GLframebufferDepthMap::set_res(GLuint _width, GLuint _height) {
+		Clear();
+		Init(_width, _height);
+	}
+
+	void GLframebufferDepthMap::Clear() {
+		glDeleteFramebuffers(1, &mFboHandle);
+		glDeleteTextures(1, &mDepthMapHandle);
+	}
+
+	void GLframebufferDepthMap::Init(GLuint _width, GLuint _height) {
 		glGenTextures(1, &mDepthMapHandle);
 		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _width, _height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -176,10 +197,6 @@ namespace cckit
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-	void GLframebufferDepthMap::push_texture(GLenum _texture) {
-		glActiveTexture(_texture);
-		glBindTexture(GL_TEXTURE_2D, mDepthMapHandle);
 	}
 	
 #pragma endregion GLframebufferDepthMap

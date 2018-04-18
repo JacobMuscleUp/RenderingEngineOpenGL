@@ -2,18 +2,22 @@
 #define CCKIT_GL_INPUT
 
 #include <GLFW/glfw3.h>
+#include <unordered_map>
 
 namespace cckit 
 {
 	bool glGetKeyDown(GLFWwindow* _pWindow, int _key) {
-		static bool bKeyPressed = false;
+		static std::unordered_map<int, bool> mapKey2bPressed;
+		if (mapKey2bPressed.find(_key) == mapKey2bPressed.end())
+			mapKey2bPressed[_key] = false;
+
 		if (glfwGetKey(_pWindow, _key) == GLFW_PRESS
-			&& !bKeyPressed) {
-			bKeyPressed = true;
+			&& !mapKey2bPressed[_key]) {
+			mapKey2bPressed[_key] = true;
 			return true;
 		}
 		else if (glfwGetKey(_pWindow, _key) == GLFW_RELEASE)
-			bKeyPressed = false;
+			mapKey2bPressed[_key] = false;
 		return false;
 	}
 }

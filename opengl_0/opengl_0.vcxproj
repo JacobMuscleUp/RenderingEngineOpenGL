@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>F:\C++ Programs\opengl_0\opengl_0\OpenGl Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\C++ Programs\opengl_0\opengl_0\OpenGl Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\Downloads\RenderingEngineOpenGL-master\opengl_0\OpenGl Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\Downloads\RenderingEngineOpenGL-master\opengl_0\OpenGl Libraries\lib;$(LibraryPath)</LibraryPath>
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,9 +122,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\OpenGL Extension ESSENTIAL\OpenGl Library\src\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainBackup.cpp" />
+    <ClCompile Include="OpenGl Libraries\src\glad.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="afx_config.h" />

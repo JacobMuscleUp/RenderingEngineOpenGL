@@ -17,16 +17,19 @@
 using std::cout; using std::endl; using std::cin;
 
 void fps_assimp(GLFWwindow* _pWindow);
-void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime);
+void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLframebufferDepthMap& _fbo, float _deltaTime);
 void setup_fsConfigs();
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
-const int SHADOW_RES_WIDTH = 2048;
-const int SHADOW_RES_HEIGHT = 2048;
+const int SCREEN_WIDTH = 1920;
+const int SCREEN_HEIGHT = 1080;
+const int SHADOW_RES_STEP = 1024;
+int shadowResWidth = 2048;
+int shadowResHeight = 2048;
+/*int shadowResWidth = 8192;
+int shadowResHeight = 8192;*/
 
 int main() {
 	int temp;
@@ -93,7 +96,9 @@ void fps_assimp(GLFWwindow* _pWindow)
 	});
 
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
-	matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+	//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+	glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+	matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
 	pShaderOutline = cckit::GLfactory<cckit::GLshader>::generate();
@@ -114,7 +119,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLobj& spawner = cckit::GenPrefabBullSpawner(cckit::ConfigPrefabBullSpawner0);
 	cckit::GLobj& box = cckit::GenPrefabBox(cckit::ConfigPrefabBox0);
 	cckit::GLobj& skybox = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox0);
-	//cckit::GLobj& skybox0 = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox1);
+	cckit::GLobj& skybox0 = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox1);
 	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
 
@@ -127,7 +132,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 #endif
 
 #ifdef SHADOW_MAPPING_ENABLED
-	cckit::GLframebufferDepthMap fboDepthMap(SHADOW_RES_WIDTH, SHADOW_RES_HEIGHT);
+	cckit::GLframebufferDepthMap fboDepthMap(shadowResWidth, shadowResHeight);
 	cckit::GLquad quadFboDepthMap;
 	pShaderDepthDebug->set1i("depthMap", 0);
 	
@@ -142,7 +147,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 		deltaTime = currentFrameTime - lastFrameTime;
 		lastFrameTime = currentFrameTime;
 
-		process_keyboard(_pWindow, camera, deltaTime);
+		process_keyboard(_pWindow, camera, fboDepthMap, deltaTime);
 
 #ifdef POSTPROCESS_ENABLED
 		fboStack.push(fbo);
@@ -157,7 +162,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 #ifdef SHADOW_MAPPING_ENABLED
 		fboStack.push(fboDepthMap);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		glViewport(0, 0, SHADOW_RES_WIDTH, SHADOW_RES_HEIGHT);
+		glViewport(0, 0, shadowResWidth, shadowResHeight);
 #endif
 
 		cckit::GLobj::globally_start_behaviors();
@@ -226,7 +231,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLshader::unload();
 }
 
-void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _deltaTime)
+void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLframebufferDepthMap& _fbo, float _deltaTime)
 {
 	if (glfwGetKey(_pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS
 		|| glfwGetKey(_pWindow, GLFW_KEY_SPACE) == GLFW_PRESS
@@ -251,12 +256,17 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _deltaTime);
-		matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	}
 	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z - _deltaTime);
-		matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
+		glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	}
+
 
 	if (glfwGetKey(_pWindow, GLFW_KEY_N) == GLFW_PRESS)
 		heightScale -= _deltaTime;
@@ -267,8 +277,18 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, float _del
 	else if (glfwGetKey(_pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		orthoScale += _deltaTime;
 
-	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_DOWN))
+	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_L))
 		bDepthMapView = !bDepthMapView;
+	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_UP)) {
+		shadowResWidth = std::min(std::max(0, shadowResWidth + SHADOW_RES_STEP), 10240);
+		shadowResHeight = std::min(std::max(0, shadowResHeight + SHADOW_RES_STEP), 10240);
+		_fbo.set_res(shadowResWidth, shadowResHeight);
+	}
+	else if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_DOWN)) {
+		shadowResWidth = std::min(std::max(0, shadowResWidth - SHADOW_RES_STEP), 10240);
+		shadowResHeight = std::min(std::max(0, shadowResHeight - SHADOW_RES_STEP), 10240);
+		_fbo.set_res(shadowResWidth, shadowResHeight);
+	}
 }
 
 void setup_fsConfigs() {
