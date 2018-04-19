@@ -70,7 +70,7 @@ void main()
 #endif
 
 #ifdef SHADOW
-    finalColor = (1.0 - 0.7 * InShadow(depthMap, fs_in.fragPosLightSpaceNDC, fs_in.normal, normalize(dirLight.dir))) * finalColor;
+    finalColor = (1.0 - 0.7 * InShadow(depthMap, fs_in.fragPosLightSpaceNDC, normal, normalize(dirLight.dir))) * finalColor;
 #endif
 
     fragColor = vec4(finalColor, 1.0);

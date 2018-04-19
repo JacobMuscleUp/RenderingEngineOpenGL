@@ -28,8 +28,6 @@ const int SCREEN_HEIGHT = 1080;
 const int SHADOW_RES_STEP = 1024;
 int shadowResWidth = 2048;
 int shadowResHeight = 2048;
-/*int shadowResWidth = 8192;
-int shadowResHeight = 8192;*/
 
 int main() {
 	int temp;
@@ -62,6 +60,7 @@ int main() {
 	glfwSetWindowCloseCallback(pWindow, [](GLFWwindow*) {
 		cout << "window closed" << endl;
 	});
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
 
 	fps_assimp(pWindow);
 
@@ -96,8 +95,7 @@ void fps_assimp(GLFWwindow* _pWindow)
 	});
 
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
-	//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
-	glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+	dirLightPos =  -5.0f * dirLightDir;
 	matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
@@ -130,12 +128,11 @@ void fps_assimp(GLFWwindow* _pWindow)
 	cckit::GLquad quadFbo;
 	pShaderScreen->set1i("screenTexture", 0);// attach "screenTexture" to GL_TEXTURE0 where screenTexture in sampler2D
 #endif
-
+	
 #ifdef SHADOW_MAPPING_ENABLED
 	cckit::GLframebufferDepthMap fboDepthMap(shadowResWidth, shadowResHeight);
 	cckit::GLquad quadFboDepthMap;
 	pShaderDepthDebug->set1i("depthMap", 0);
-	
 #endif
 
 	float deltaTime
@@ -206,7 +203,8 @@ void fps_assimp(GLFWwindow* _pWindow)
 				_camera.set_shader_coord_axes(*pShaderCoordAxes);
 			}
 				, [&](cckit::GLcamera& _camera, const cckit::GLobj& _obj) {
-				fboDepthMap.push_texture(GL_TEXTURE0);
+				
+				fboDepthMap.push_texture(GL_TEXTURE0 + maxTextureUnits - 1);
 				_camera.render(_obj);
 			});
 		}
@@ -256,14 +254,12 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLf
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _deltaTime);
-		//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
-		glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+		dirLightPos = -5.0f * dirLightDir;
 		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	}
 	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) {
 		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z - _deltaTime);
-		//matViewLightSpace = glm::lookAtRH(ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0), ptLights[0].mPos + glm::vec3(0.0, 3.0, 0.0) + dirLightDir);
-		glm::vec3 dirLightPos = (dirLightDir.z < 0) ? glm::vec3(0, 3, 10) : glm::vec3(0, 3, -10);
+		dirLightPos = -5.0f * dirLightDir;
 		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	}
 
@@ -331,7 +327,7 @@ void setup_fsConfigs() {
 		_shader.set3fv("viewPos", camera.pos());
 
 		_shader.setmatrix4fv("matViewLightSpace", 1, GL_FALSE, matViewLightSpace);
-		_shader.set1i("depthMap", 0);
+		_shader.set1i("depthMap", maxTextureUnits - 1);
 	};
 	auto fsGlobalConfigTextureNM
 		= [&fsGlobalConfig](const cckit::GLshader& _shader) {

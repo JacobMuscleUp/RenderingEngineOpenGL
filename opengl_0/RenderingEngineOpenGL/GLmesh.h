@@ -42,6 +42,8 @@ namespace cckit
 	class GLmesh 
 	{
 	public:
+		const static GLuint MAX_TEXTURE_UNITS = 10;
+	public:
 		GLmesh(const std::vector<GLvertex>& _vertices
 			, const std::vector<GLuint>& _indices
 			, const std::vector<GLtexture>& _textures)
@@ -69,7 +71,7 @@ namespace cckit
 			, specularIndex = 0
 			, normalIndex = 0
 			, heightIndex = 0;
-		for (GLuint i = 0; i < mTextures.size(); ++i) {
+		for (GLuint i = 0, iEnd = mTextures.size(); i < iEnd; ++i) {
 			glActiveTexture(GL_TEXTURE0 + i);
 
 			std::string textureType = mTextures[i].mType
