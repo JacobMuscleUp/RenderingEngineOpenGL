@@ -16,9 +16,33 @@
 
 using std::cout; using std::endl; using std::cin;
 
-void fps_assimp(GLFWwindow* _pWindow);
+GLFWwindow* init_glfw();
+void set_callback_glfw(GLFWwindow* _pWindow);
+void run(GLFWwindow* _pWindow);
 void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLframebufferDepthMap& _fbo, float _deltaTime);
 void setup_fsConfigs();
+
+void test_callback() {
+	cckit::GLdelegate<bool, int, int> delegate0;
+	bool(*callback0)(int, int) = [](int a, int b) {
+		cout << a + b << endl;
+		return true;
+	};
+	bool(*callback1)(int, int) = [](int a, int b) {
+		cout << a * b << endl;
+		return true;
+	};
+	(delegate0 += callback0) += callback1;
+	delegate0.add([](int a, int b) {
+		cout << a - b << endl;
+		return true;
+	});
+	delegate0.invoke(3, 5);
+	cout << endl;
+	delegate0 -= callback1;
+	delegate0.invoke(3, 5);
+	cout << endl;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,54 +53,68 @@ const int SHADOW_RES_STEP = 1024;
 int shadowResWidth = 2048;
 int shadowResHeight = 2048;
 
-int main() {
-	int temp;
+cckit::BehaviorLamp lampBehavior;
+float heightScale = 0.1f;
 
+int main() {
+	int iDummy;
+
+	test_callback();
+
+	GLFWwindow* pWindow = init_glfw();
+	if (!pWindow) {
+		cout << "window creation failed" << endl;
+
+		glfwTerminate();
+		cin >> iDummy;
+		return -1;
+	}
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		cout << "glad init failed" << endl;
+
+		glfwTerminate();
+		cin >> iDummy;
+		return -1;
+	}
+	set_callback_glfw(pWindow);
+	
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+	run(pWindow);
+
+	glfwTerminate();
+	cin >> iDummy;
+	return 0;
+}
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+GLFWwindow* init_glfw() 
+{
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* pWindow = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "test0", nullptr, nullptr);
-	if (!pWindow) {
-		cout << "window creation failed" << endl;
-		glfwTerminate();
-		cin >> temp;
-		return -1;
-	}
-	glfwMakeContextCurrent(pWindow);
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		cout << "glad init failed" << endl;
-		glfwTerminate();
-		cin >> temp;
-		return -1;
+	if (pWindow)
+	{
+		glfwMakeContextCurrent(pWindow);
+		glfwSetInputMode(pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
+	return pWindow;
+}
+
+void set_callback_glfw(GLFWwindow* _pWindow)
+{
 	GLFWframebuffersizefun framebufferSizeCallback = [](GLFWwindow* _pWindow, int _width, int _height) {
 		glViewport(0, 0, _width, _height);
 		cout << "framebuffer resized" << endl;
 	};
-	glfwSetFramebufferSizeCallback(pWindow, framebufferSizeCallback);
-	glfwSetWindowCloseCallback(pWindow, [](GLFWwindow*) {
+	glfwSetFramebufferSizeCallback(_pWindow, framebufferSizeCallback);
+	glfwSetWindowCloseCallback(_pWindow, [](GLFWwindow*) {
 		cout << "window closed" << endl;
 	});
-	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
-
-	fps_assimp(pWindow);
-
-	glfwTerminate();
-	cin >> temp;
-	return 0;
-}
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-cckit::BehaviorLamp lampBehavior;
-float heightScale = 0.1f;
-
-void fps_assimp(GLFWwindow* _pWindow)
-{
-	glfwSetInputMode(_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(_pWindow, [](GLFWwindow* pWindow, double posX, double posY) {
 		static bool bFirstEntry = true;
 		static float lastPosX, lastPosY;
@@ -93,7 +131,10 @@ void fps_assimp(GLFWwindow* _pWindow)
 
 		camera.process_mouse(offsetX, offsetY);
 	});
+}
 
+void run(GLFWwindow* _pWindow)
+{
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
 	dirLightPos =  -5.0f * dirLightDir;
 	matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);

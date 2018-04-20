@@ -281,6 +281,44 @@ namespace cckit
 	}
 #pragma endregion GLquad
 
+#pragma region GLdelegate
+	template<typename Ret, typename... Args>
+	class GLdelegate
+	{
+	public:
+		//typedef std::function<Ret(Args...)> delegate_type;
+		typedef Ret(*delegate_type)(Args...);
+	private:
+		typedef GLdelegate<Ret, Args...> this_type;
+	public:
+		GLdelegate();
+		void add(const delegate_type& _callback);
+		void remove(const delegate_type& _callback);
+		void invoke(Args...) const;
+		this_type& operator+=(const delegate_type& _callback) { add(_callback); return *this; }
+		this_type& operator-=(const delegate_type& _callback) { remove(_callback); return *this; }
+	private:
+		std::list<delegate_type*> mpCallbacks;
+	};
+	template<typename Ret, typename... Args>
+	GLdelegate<Ret, Args...>::GLdelegate() 
+		: mpCallbacks()
+	{}
+	template<typename Ret, typename... Args>
+	void GLdelegate<Ret, Args...>::add(const delegate_type& _callback) {
+		mpCallbacks.push_back(const_cast<delegate_type*>(&_callback));
+	}
+	template<typename Ret, typename... Args>
+	void GLdelegate<Ret, Args...>::remove(const delegate_type& _callback) {
+		mpCallbacks.remove(const_cast<delegate_type*>(&_callback));
+	}
+	template<typename Ret, typename... Args>
+	void GLdelegate<Ret, Args...>::invoke(Args... _args) const {
+		for (auto pCallback : mpCallbacks)
+			(*pCallback)(_args...);
+	}
+#pragma endregion GLdelegate
+
 	GLuint glLoadCubeMap(const std::vector<std::string>& _faces) {
 		GLuint textureHandle;
 		glGenTextures(1, &textureHandle);
