@@ -22,8 +22,15 @@ cckit::GLlight ptLights[1]{ cckit::GLlight(glm::vec3(0, 0, -2), glm::vec3(1, 1, 
 glm::mat4 matViewLightSpace;
 glm::vec3 dirLightDir;
 glm::vec3 dirLightPos;
-float orthoScale = 10.0f;
+float dirLightDist;
+float orthoScale = 1.0f;
 bool bDepthMapView = false;
 GLint maxTextureUnits;
+
+// events
+cckit::GLdelegate<void, float> onLightDirChanged;
+cckit::GLdelegate<void, GLuint, GLuint, cckit::GLframebufferDepthMap&> onShadowResChanged;
+cckit::GLdelegate<void, float> onOrthoBoxResized;
+cckit::GLdelegate<void, float> onDirLightDistChanged;
 
 #endif // !CCKIT_GLOBAL_H

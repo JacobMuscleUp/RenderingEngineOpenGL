@@ -40,8 +40,12 @@ void test_callback() {
 	delegate0.invoke(3, 5);
 	cout << endl;
 	delegate0 -= callback1;
-	delegate0.invoke(3, 5);
+	delegate0(44, 5);
 	cout << endl;
+
+	cckit::GLdelegateAction del0;
+	(del0 += []() {cout << "hello" << endl; }) += []() {cout << "world" << endl; };
+	del0();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,8 +139,28 @@ void set_callback_glfw(GLFWwindow* _pWindow)
 
 void run(GLFWwindow* _pWindow)
 {
+	// EVENT
+	onLightDirChanged += [](float _delta) {
+		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _delta);
+		dirLightPos = -dirLightDist * dirLightDir;
+		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
+	};
+	onShadowResChanged += [](GLuint _width, GLuint _height, cckit::GLframebufferDepthMap& _fbo) {
+		_fbo.set_res(_width, _height);
+	};
+	onOrthoBoxResized += [](float _delta) {
+		orthoScale += _delta;
+	};
+	onDirLightDistChanged += [](float _delta) {
+		dirLightDist += _delta;
+		onLightDirChanged(0.0f);
+		//cout << dirLightDist << endl;
+	};
+	//! EVENT
+
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
-	dirLightPos =  -5.0f * dirLightDir;
+	dirLightDist = 5.0f;
+	dirLightPos = -dirLightDist * dirLightDir;
 	matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
 	
 	pShaderCoordAxes = cckit::GLfactory<cckit::GLshader>::generate();
@@ -208,7 +232,6 @@ void run(GLFWwindow* _pWindow)
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
 			_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
-			//_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-1.0f, 1.0f, (float)-SCREEN_HEIGHT / SCREEN_WIDTH, (float)SCREEN_HEIGHT / SCREEN_WIDTH, 0.1f, 100.0f);
 			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
@@ -239,7 +262,7 @@ void run(GLFWwindow* _pWindow)
 				, [](cckit::GLcamera& _camera) {
 				_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 				_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
-				//_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-1.0f, 1.0f, (float)-SCREEN_HEIGHT / SCREEN_WIDTH, (float)SCREEN_HEIGHT / SCREEN_WIDTH, 0.1f, 100.0f);
+				//_camera.set_perspective<cckit::GLcamera::projection::lightSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 				_camera.set_shader_outline(*pShaderOutline);
 				_camera.set_shader_coord_axes(*pShaderCoordAxes);
 			}
@@ -293,16 +316,10 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLf
 		lampBehavior.obj().set_position(lampBehavior.obj().position() + glm::vec3(_deltaTime, 0, 0));
 	else if (glfwGetKey(_pWindow, GLFW_KEY_LEFT) == GLFW_PRESS)
 		lampBehavior.obj().set_position(lampBehavior.obj().position() - glm::vec3(_deltaTime, 0, 0));
-	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) {
-		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _deltaTime);
-		dirLightPos = -5.0f * dirLightDir;
-		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
-	}
-	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) {
-		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z - _deltaTime);
-		dirLightPos = -5.0f * dirLightDir;
-		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
-	}
+	else if (glfwGetKey(_pWindow, GLFW_KEY_O) == GLFW_PRESS) 
+		onLightDirChanged(_deltaTime);
+	else if (glfwGetKey(_pWindow, GLFW_KEY_P) == GLFW_PRESS) 
+		onLightDirChanged(-_deltaTime);
 
 
 	if (glfwGetKey(_pWindow, GLFW_KEY_N) == GLFW_PRESS)
@@ -317,15 +334,25 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLf
 	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_L))
 		bDepthMapView = !bDepthMapView;
 	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_UP)) {
-		shadowResWidth = std::min(std::max(0, shadowResWidth + SHADOW_RES_STEP), 10240);
-		shadowResHeight = std::min(std::max(0, shadowResHeight + SHADOW_RES_STEP), 10240);
-		_fbo.set_res(shadowResWidth, shadowResHeight);
+		onShadowResChanged(
+			shadowResWidth = std::min(std::max(0, shadowResWidth + SHADOW_RES_STEP), 10240)
+			, shadowResHeight = std::min(std::max(0, shadowResHeight + SHADOW_RES_STEP), 10240)
+			, _fbo);
 	}
 	else if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_DOWN)) {
-		shadowResWidth = std::min(std::max(0, shadowResWidth - SHADOW_RES_STEP), 10240);
-		shadowResHeight = std::min(std::max(0, shadowResHeight - SHADOW_RES_STEP), 10240);
-		_fbo.set_res(shadowResWidth, shadowResHeight);
+		onShadowResChanged(
+			shadowResWidth = std::min(std::max(0, shadowResWidth - SHADOW_RES_STEP), 10240)
+			, shadowResHeight = std::min(std::max(0, shadowResHeight - SHADOW_RES_STEP), 10240)
+			, _fbo);
 	}
+	if (glfwGetKey(_pWindow, GLFW_KEY_U) == GLFW_PRESS)
+		onOrthoBoxResized(-_deltaTime);
+	else if (glfwGetKey(_pWindow, GLFW_KEY_I) == GLFW_PRESS)
+		onOrthoBoxResized(_deltaTime);
+	if (glfwGetKey(_pWindow, GLFW_KEY_T) == GLFW_PRESS)
+		onDirLightDistChanged(-10 * _deltaTime);
+	else if (glfwGetKey(_pWindow, GLFW_KEY_Y) == GLFW_PRESS)
+		onDirLightDistChanged(10 * _deltaTime);
 }
 
 void setup_fsConfigs() {
@@ -418,7 +445,10 @@ void setup_fsConfigs() {
 		[cckit::GLshader::mStringHash("Shaders/shaderSkybox.vs")]
 	[cckit::GLshader::mStringHash("Shaders/shaderSkybox.fs")]
 	= std::pair<std::function<void(const cckit::GLshader&)>, std::function<void(const cckit::GLshader&, const cckit::GLrenderer&)> >
-		([](const cckit::GLshader&) {}, [](const cckit::GLshader&, const cckit::GLrenderer&) {});
+		(
+			[](const cckit::GLshader& _shader) { _shader.set1i("skyboxTexture", 1); }
+			, [](const cckit::GLshader&, const cckit::GLrenderer&) {}
+	);
 }
 
 ////////////////////////////////

@@ -23,6 +23,7 @@ namespace cckit
 		faces.push_back("../Resources/SKYBOX/back.jpg");
 		faces.push_back("../Resources/SKYBOX/front.jpg");
 		GLuint textureHandle = glLoadCubeMap(faces);
+		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, textureHandle);*/
 		
 		auto pairGConfig2LConfig

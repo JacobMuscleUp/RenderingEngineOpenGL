@@ -297,9 +297,12 @@ namespace cckit
 		void invoke(Args...) const;
 		this_type& operator+=(const delegate_type& _callback) { add(_callback); return *this; }
 		this_type& operator-=(const delegate_type& _callback) { remove(_callback); return *this; }
+		void operator()(Args... _args) const { invoke(std::forward<Args>(_args)...); }
 	private:
 		std::list<delegate_type*> mpCallbacks;
 	};
+	typedef GLdelegate<void> GLdelegateAction;
+
 	template<typename Ret, typename... Args>
 	GLdelegate<Ret, Args...>::GLdelegate() 
 		: mpCallbacks()
