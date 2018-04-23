@@ -28,7 +28,7 @@ namespace cckit
 	private:
 		GLshader() : mValid(GL_FALSE) { mInstances.push_front(this); }
 	public:
-		void load(const GLchar* _vsPath, const GLchar* _fsPath);
+		void load(const GLchar* _vsPath, const GLchar* _fsPath, const GLchar* _gsPath = nullptr);
 	
 		void use() const
 		{
@@ -68,11 +68,15 @@ namespace cckit
 	private:
 		bool Preprocess(std::string& src);
 		void PreprocessRec(std::string& src);
+		void Load(const GLchar* _vsPath, const GLchar* _fsPath
+			, std::function<bool(GLshader&, GLuint&)> _gsInit
+			, std::function<void(GLuint)> _gsAttach
+			, std::function<void(GLuint)> _gsDetach);
 
 	private:
 		GLuint mHandle;
 		GLboolean mValid;
-		std::string mVsPath, mFsPath;
+		std::string mVsPath, mFsPath, mGsPath;
 	public:
 		std::function<void(const GLshader&)> mFsGlobalConfig;// the GLshader arg must be currently used prior to its invocation
 		std::function<void(const GLshader&, const GLrenderer&)> mFsLocalConfig;// the GLshader arg must be currently used prior to its invocation
@@ -94,66 +98,40 @@ namespace cckit
 		, std::pair<std::function<void(const GLshader&)>, std::function<void(const GLshader&, const GLrenderer&)> > > > GLshader::mMapShaderPath2FsGLConfig;
 	std::hash<std::string> GLshader::mStringHash;
 
-	void GLshader::load(const GLchar* _vsPath, const GLchar* _fsPath) {
-		mValid = GL_TRUE;
-		mVsPath = _vsPath;
-		mFsPath = _fsPath;
+	void GLshader::load(const GLchar* _vsPath, const GLchar* _fsPath, const GLchar* _gsPath) {
+		Load(_vsPath, _fsPath
+			, [&](GLshader& _shader, GLuint& _gsHandle) {
+			if (_gsPath) {
+				GLint bShaderCompiled = GL_TRUE;
+				mGsPath = _gsPath;
 
-		std::string vertexShaderSourceStr = glLoadFile(_vsPath)
-			, fragmentShaderSourceStr = glLoadFile(_fsPath);
-		/*Preprocess(vertexShaderSourceStr);
-		Preprocess(fragmentShaderSourceStr);
-		while (Preprocess(vertexShaderSourceStr)) {}
-		while (Preprocess(fragmentShaderSourceStr)) {}*/
-		PreprocessRec(vertexShaderSourceStr);
-		PreprocessRec(fragmentShaderSourceStr);
+				std::string gsSourceStr = glLoadFile(_gsPath);
+				PreprocessRec(gsSourceStr);
 
-		const GLchar *vertexShaderSource = vertexShaderSourceStr.c_str()
-			, *fragmentShaderSource = fragmentShaderSourceStr.c_str();
+				const GLchar *gsSource = gsSourceStr.c_str();
 
-		const GLuint vertexShaderHandle = glCreateShader(GL_VERTEX_SHADER)
-			, fragmentShaderHandle = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(vertexShaderHandle, 1, &vertexShaderSource, nullptr);
-		glShaderSource(fragmentShaderHandle, 1, &fragmentShaderSource, nullptr);
-		glCompileShader(vertexShaderHandle);
-		glCompileShader(fragmentShaderHandle);
+				_gsHandle = glCreateShader(GL_GEOMETRY_SHADER);
+				glShaderSource(_gsHandle, 1, &gsSource, nullptr);
+				glCompileShader(_gsHandle);
 
-		GLint bShaderCompiled = GL_TRUE;
-		glGetShaderiv(vertexShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
-		if (!bShaderCompiled) {
-			char infoLog[512];
-			glGetShaderInfoLog(vertexShaderHandle, length(infoLog), nullptr, infoLog);
-			std::cout << "vertex shader compilation failed\n" << infoLog << "\n";
-			mValid = GL_FALSE;
-			return;
-		}
-		glGetShaderiv(fragmentShaderHandle, GL_COMPILE_STATUS, &bShaderCompiled);
-		if (!bShaderCompiled) {
-			char infoLog[512];
-			glGetShaderInfoLog(fragmentShaderHandle, length(infoLog), nullptr, infoLog);
-			std::cout << "fragment shader compilation failed\n" << infoLog << "\n";
-			mValid = GL_FALSE;
-			return;
-		}
+				glGetShaderiv(_gsHandle, GL_COMPILE_STATUS, &bShaderCompiled);
+				if (!bShaderCompiled) {
+					char infoLog[512];
+					glGetShaderInfoLog(_gsHandle, length(infoLog), nullptr, infoLog);
+					std::cout << "geometry shader compilation failed\n" << infoLog << "\n";
+					mValid = GL_FALSE;
+					return false;
+				}
 
-		mHandle = glCreateProgram();
-		glAttachShader(mHandle, vertexShaderHandle);
-		glAttachShader(mHandle, fragmentShaderHandle);
-		glLinkProgram(mHandle);
-		glDetachShader(mHandle, vertexShaderHandle);
-		glDetachShader(mHandle, fragmentShaderHandle);
-		glDeleteShader(vertexShaderHandle);
-		glDeleteShader(fragmentShaderHandle);
-
-		GLint bProgramLinked = GL_TRUE;
-		glGetProgramiv(mHandle, GL_LINK_STATUS, &bProgramLinked);
-		if (!bProgramLinked) {
-			char infoLog[512];
-			glGetProgramInfoLog(mHandle, length(infoLog), nullptr, infoLog);
-			std::cout << "program linking failed\n" << infoLog << "\n";
-			mValid = GL_FALSE;
-			return;
-		}
+				return true;
+			}
+			return false;
+		}, [this](GLuint _gsHandle) {
+			glAttachShader(mHandle, _gsHandle);
+		}, [this](GLuint _gsHandle) {
+			glDetachShader(mHandle, _gsHandle);
+			glDeleteShader(_gsHandle);
+		});
 	}
 
 	bool GLshader::Preprocess(std::string& src) {
@@ -203,6 +181,78 @@ namespace cckit
 		}
 
 		src = sstreamTemp.str();
+	}
+
+	void GLshader::Load(const GLchar* _vsPath, const GLchar* _fsPath
+		, std::function<bool(GLshader&, GLuint&)> _gsInit
+		, std::function<void(GLuint)> _gsAttach
+		, std::function<void(GLuint)> _gsDetach) {
+		GLint bShaderCompiled = GL_TRUE, bProgramLinked = GL_TRUE;
+
+		GLuint gsHandle;
+		bool bGsExist = _gsInit(*this, gsHandle);
+
+		mValid = GL_TRUE;
+		mVsPath = _vsPath;
+		mFsPath = _fsPath;
+
+		std::string vsSourceStr = glLoadFile(_vsPath)
+			, fsSourceStr = glLoadFile(_fsPath);
+		/*Preprocess(vertexShaderSourceStr);
+		Preprocess(fragmentShaderSourceStr);
+		while (Preprocess(vertexShaderSourceStr)) {}
+		while (Preprocess(fragmentShaderSourceStr)) {}*/
+		PreprocessRec(vsSourceStr);
+		PreprocessRec(fsSourceStr);
+
+		const GLchar *vsSource = vsSourceStr.c_str()
+			, *fsSource = fsSourceStr.c_str();
+
+		const GLuint vsHandle = glCreateShader(GL_VERTEX_SHADER)
+			, fsHandle = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(vsHandle, 1, &vsSource, nullptr);
+		glShaderSource(fsHandle, 1, &fsSource, nullptr);
+		glCompileShader(vsHandle);
+		glCompileShader(fsHandle);
+
+		glGetShaderiv(vsHandle, GL_COMPILE_STATUS, &bShaderCompiled);
+		if (!bShaderCompiled) {
+			char infoLog[512];
+			glGetShaderInfoLog(vsHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "vertex shader compilation failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
+		glGetShaderiv(fsHandle, GL_COMPILE_STATUS, &bShaderCompiled);
+		if (!bShaderCompiled) {
+			char infoLog[512];
+			glGetShaderInfoLog(fsHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "fragment shader compilation failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
+
+		mHandle = glCreateProgram();
+		glAttachShader(mHandle, vsHandle);
+		glAttachShader(mHandle, fsHandle);
+		if (bGsExist)
+			_gsAttach(gsHandle);
+		glLinkProgram(mHandle);
+		glDetachShader(mHandle, vsHandle);
+		glDetachShader(mHandle, fsHandle);
+		glDeleteShader(vsHandle);
+		glDeleteShader(fsHandle);
+		if (bGsExist)
+			_gsDetach(gsHandle);
+
+		glGetProgramiv(mHandle, GL_LINK_STATUS, &bProgramLinked);
+		if (!bProgramLinked) {
+			char infoLog[512];
+			glGetProgramInfoLog(mHandle, length(infoLog), nullptr, infoLog);
+			std::cout << "program linking failed\n" << infoLog << "\n";
+			mValid = GL_FALSE;
+			return;
+		}
 	}
 }
 

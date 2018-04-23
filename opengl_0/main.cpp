@@ -171,7 +171,7 @@ void run(GLFWwindow* _pWindow)
 	pShaderCoordAxes->load("Shaders/shaderMonoColor0.vs", "Shaders/shaderMonoColor0.fs");
 	pShaderOutline->load("Shaders/shaderMonoColor1.vs", "Shaders/shaderMonoColor1.fs");
 	pShaderScreen->load("Shaders/ShaderFramebuffer.vs", "Shaders/ShaderFramebuffer.fs");
-	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs");
+	pShaderDepthMap->load("Shaders/ShaderDepthMap.vs", "Shaders/ShaderDepthMap.fs", "Shaders/s.gs");
 	pShaderDepthDebug->load("Shaders/ShaderDepthDebug.vs", "Shaders/ShaderDepthDebug.fs");
 	setup_fsConfigs();
 
