@@ -201,6 +201,65 @@ namespace cckit
 	
 #pragma endregion GLframebufferDepthMap
 
+#pragma region GLframebufferDepthCubeMap
+	class GLframebufferDepthCubeMap : public GLframebufferBase
+	{
+	public:
+		GLframebufferDepthCubeMap(GLuint _width, GLuint _height);
+		~GLframebufferDepthCubeMap() {
+			Clear();
+		}
+		void set_active() {
+			glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
+		}
+		void push_texture(GLenum _texture);
+		void set_res(GLuint _width, GLuint _height);
+	private:
+		void Clear();
+		void Init(GLuint _width, GLuint _height);
+	private:
+		GLuint mFboHandle, mDepthCubeMapHandle;
+	};
+	GLframebufferDepthCubeMap::GLframebufferDepthCubeMap(GLuint _width, GLuint _height) {
+		Init(_width, _height);
+	}
+	void GLframebufferDepthCubeMap::push_texture(GLenum _texture) {
+		glActiveTexture(_texture);
+		glBindTexture(GL_TEXTURE_2D, mDepthCubeMapHandle);
+	}
+
+	void GLframebufferDepthCubeMap::set_res(GLuint _width, GLuint _height) {
+		Clear();
+		Init(_width, _height);
+	}
+
+	void GLframebufferDepthCubeMap::Clear() {
+		glDeleteFramebuffers(1, &mFboHandle);
+		glDeleteTextures(1, &mDepthCubeMapHandle);
+	}
+
+	void GLframebufferDepthCubeMap::Init(GLuint _width, GLuint _height) {
+		glGenTextures(1, &mDepthCubeMapHandle);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, mDepthCubeMapHandle);
+		for (unsigned int i = 0; i < 6; ++i)
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT
+				, _width, _height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		glGenFramebuffers(1, &mFboHandle);
+		glBindFramebuffer(GL_FRAMEBUFFER, mFboHandle);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepthCubeMapHandle, 0);
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+#pragma endregion GLframebufferDepthCubeMap
+
 #pragma region GLframebufferStack
 	template<typename T>
 	class GLframebufferStackBase 

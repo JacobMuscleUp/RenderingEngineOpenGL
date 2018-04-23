@@ -232,7 +232,7 @@ void run(GLFWwindow* _pWindow)
 		cckit::GLobj::globally_render(&camera
 			, [](cckit::GLcamera& _camera) {
 			_camera.set_ortho<cckit::GLcamera::projection::viewSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
-			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			//_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(10.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 			_camera.set_shader_outline(*pShaderOutline);
 			_camera.set_shader_coord_axes(*pShaderCoordAxes);
 		}
@@ -262,7 +262,7 @@ void run(GLFWwindow* _pWindow)
 				, [](cckit::GLcamera& _camera) {
 				_camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 				_camera.set_ortho<cckit::GLcamera::projection::lightSpace>(-orthoScale, orthoScale, -orthoScale, orthoScale, 0.1f, 100.0f);
-				//_camera.set_perspective<cckit::GLcamera::projection::lightSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+				//_camera.set_perspective<cckit::GLcamera::projection::lightSpace>(10.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
 				_camera.set_shader_outline(*pShaderOutline);
 				_camera.set_shader_coord_axes(*pShaderCoordAxes);
 			}
