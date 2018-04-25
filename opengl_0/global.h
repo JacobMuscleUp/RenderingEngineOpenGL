@@ -23,6 +23,7 @@ glm::mat4 matViewLightSpace;
 glm::vec3 dirLightDir;
 glm::vec3 dirLightPos;
 float dirLightDist;
+cckit::GLline lineLight;
 float orthoScale = 1.0f;
 bool bDepthMapView = false;
 GLint maxTextureUnits;

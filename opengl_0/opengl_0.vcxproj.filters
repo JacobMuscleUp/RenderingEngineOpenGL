@@ -143,6 +143,9 @@
     <ClInclude Include="RenderingEngineOpenGL\GLinput.h">
       <Filter>Header Files\RenderingEngineOpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="RenderingEngineOpenGL\GLgeometry.h">
+      <Filter>Header Files\RenderingEngineOpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shaderLamp.vs">

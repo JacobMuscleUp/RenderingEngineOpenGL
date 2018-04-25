@@ -152,6 +152,7 @@
     <ClInclude Include="RenderingEngineOpenGL\GLcamera.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLconfig.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLfactory.h" />
+    <ClInclude Include="RenderingEngineOpenGL\GLgeometry.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLinput.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLlight.h" />
     <ClInclude Include="RenderingEngineOpenGL\GLmatrixTransform.h" />

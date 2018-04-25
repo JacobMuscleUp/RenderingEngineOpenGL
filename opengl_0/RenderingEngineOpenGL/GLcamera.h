@@ -14,6 +14,7 @@
 #include "GLutils.h"
 #include "GLobj.h"
 #include "GLmatrixTransform.h"
+#include "GLgeometry.h"
 
 namespace cckit
 {
@@ -84,6 +85,8 @@ namespace cckit
 		void render(const GLobj& _obj, GLenum _renderMode = GL_FILL) const;
 		void render(const GLobj& _obj, const glm::mat4& _matView, GLenum _renderMode = GL_FILL) const;
 		void render2depthMap(const GLobj& _obj, const glm::mat4& _matView, GLshader& _shaderDepthMap) const;
+
+		void render(const GLprimitive& _primitive) const;
 
 		const glm::vec3& pos() const { return mPos; }
 		const glm::vec3& forward() const { return mForward; }
@@ -220,6 +223,21 @@ namespace cckit
 			_shader.setmatrix4fv("matView", 1, GL_FALSE, _matView);
 			_shader.setmatrix4fv("matProjection", 1, GL_FALSE, mMatProjection);
 		});
+	}
+
+	void GLcamera::render(const GLprimitive& _primitive) const {
+		switch (_primitive.type()) {
+		case EnumPrimitive::line:
+			_primitive.render(*mpShaderCoordAxes, [&](const GLshader& _shader) {
+				_shader.use();
+				_shader.setmatrix4fv("matModel", 1, GL_FALSE, glm::mat4());
+				_shader.setmatrix4fv("matView", 1, GL_FALSE, get_view_matrix());
+				_shader.setmatrix4fv("matProjection", 1, GL_FALSE, mMatProjection);
+			});
+			break;
+		default:
+			break;
+		}
 	}
 }
 

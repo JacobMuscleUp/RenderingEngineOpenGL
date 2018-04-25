@@ -8,10 +8,10 @@
 
 namespace cckit
 {
-	/*template<size_t Size, typename T>
+	template<size_t Size, typename T>
 	inline constexpr size_t length(T(&_arr)[Size]) {
 		return Size;
-	}*/
+	}
 
 	template<typename NumberType>
 	constexpr NumberType min(NumberType a, NumberType b) {
@@ -358,7 +358,7 @@ namespace cckit
 		this_type& operator-=(const delegate_type& _callback) { remove(_callback); return *this; }
 		void operator()(Args... _args) const { invoke(std::forward<Args>(_args)...); }
 	private:
-		std::list<delegate_type*> mpCallbacks;
+		std::unordered_set<delegate_type*> mpCallbacks;
 	};
 	typedef GLdelegate<void> GLdelegateAction;
 
@@ -368,11 +368,11 @@ namespace cckit
 	{}
 	template<typename Ret, typename... Args>
 	void GLdelegate<Ret, Args...>::add(const delegate_type& _callback) {
-		mpCallbacks.push_back(const_cast<delegate_type*>(&_callback));
+		mpCallbacks.insert(const_cast<delegate_type*>(&_callback));
 	}
 	template<typename Ret, typename... Args>
 	void GLdelegate<Ret, Args...>::remove(const delegate_type& _callback) {
-		mpCallbacks.remove(const_cast<delegate_type*>(&_callback));
+		mpCallbacks.erase(const_cast<delegate_type*>(&_callback));
 	}
 	template<typename Ret, typename... Args>
 	void GLdelegate<Ret, Args...>::invoke(Args... _args) const {

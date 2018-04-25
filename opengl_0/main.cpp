@@ -8,6 +8,7 @@
 #include "RenderingEngineOpenGL/GLutils.h"
 #include "RenderingEngineOpenGL/GLfactory.h"
 #include "RenderingEngineOpenGL/GLinput.h"
+#include "RenderingEngineOpenGL/GLgeometry.h"
 
 #include "Behaviors/behaviors.h"
 #include "Prefabs/prefabs.h"
@@ -139,25 +140,6 @@ void set_callback_glfw(GLFWwindow* _pWindow)
 
 void run(GLFWwindow* _pWindow)
 {
-	// EVENT
-	onLightDirChanged += [](float _delta) {
-		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _delta);
-		dirLightPos = -dirLightDist * dirLightDir;
-		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
-	};
-	onShadowResChanged += [](GLuint _width, GLuint _height, cckit::GLframebufferDepthMap& _fbo) {
-		_fbo.set_res(_width, _height);
-	};
-	onOrthoBoxResized += [](float _delta) {
-		orthoScale += _delta;
-	};
-	onDirLightDistChanged += [](float _delta) {
-		dirLightDist += _delta;
-		onLightDirChanged(0.0f);
-		//cout << dirLightDist << endl;
-	};
-	//! EVENT
-
 	dirLightDir = glm::vec3(0.0f, -1.0f, 1.0f);
 	dirLightDist = 5.0f;
 	dirLightPos = -dirLightDist * dirLightDir;
@@ -185,6 +167,31 @@ void run(GLFWwindow* _pWindow)
 	cckit::GLobj& skybox0 = cckit::GenPrefabSkybox(cckit::ConfigPrefabSkybox1);
 	cckit::GLobj& ground = cckit::GenPrefabGround(cckit::ConfigPrefabGround0);
 	lampBehavior = *lamp.get_behavior<cckit::BehaviorLamp>();
+
+	lineLight.set(dirLightPos, 0x1);
+	lineLight.set(dirLightPos + dirLightDir * dirLightDist, 0x2);
+	lineLight.set(glm::vec3(1, 1, 0), 0x4);
+
+	// EVENT
+	onLightDirChanged += [](float _delta) {
+		dirLightDir = glm::vec3(dirLightDir.x, dirLightDir.y, dirLightDir.z + _delta);
+		dirLightPos = -dirLightDist * dirLightDir;
+		matViewLightSpace = glm::lookAtRH(dirLightPos, dirLightPos + dirLightDir);
+		
+		lineLight.set(dirLightPos, 0x1);
+		lineLight.set(dirLightPos + dirLightDir * dirLightDist, 0x2);
+	};
+	onShadowResChanged += [](GLuint _width, GLuint _height, cckit::GLframebufferDepthMap& _fbo) {
+		_fbo.set_res(_width, _height);
+	};
+	onOrthoBoxResized += [](float _delta) {
+		orthoScale += _delta;
+	};
+	onDirLightDistChanged += [](float _delta) {
+		dirLightDist += _delta;
+		onLightDirChanged(0.0f);
+	};
+	//! EVENT
 
 	cckit::GLframebufferStack fboStack;
 
@@ -226,7 +233,6 @@ void run(GLFWwindow* _pWindow)
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, shadowResWidth, shadowResHeight);
 #endif
-
 		cckit::GLobj::globally_start_behaviors();
 		cckit::GLobj::globally_update_behaviors(deltaTime);
 		cckit::GLobj::globally_render(&camera
@@ -256,6 +262,10 @@ void run(GLFWwindow* _pWindow)
 			quadFboDepthMap.render(GL_FILL);
 		}
 		else {
+			camera.set_perspective<cckit::GLcamera::projection::viewSpace>(45.0f, static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT, 0.1f, 100.0f);
+			camera.set_shader_coord_axes(*pShaderCoordAxes);
+			camera.render(lineLight);
+
 			cckit::GLobj::globally_start_behaviors();
 			cckit::GLobj::globally_update_behaviors(deltaTime);
 			cckit::GLobj::globally_render(&camera

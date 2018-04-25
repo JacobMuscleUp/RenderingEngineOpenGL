@@ -15,11 +15,6 @@
 
 namespace cckit
 {
-	template<size_t Size, typename T>
-	inline constexpr size_t length(T(&_arr)[Size]) {
-		return Size;
-	}
-
 	class GLrenderer;
 
 	class GLshader
