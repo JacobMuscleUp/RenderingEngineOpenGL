@@ -44,6 +44,7 @@ in VS_OUT {
 };
 
 uniform sampler2D screenTexture;
+uniform int mode;
 
 const float kernalOffset = 1.0 / 300.0;
 const float sharpenKernalWeights[9] 
@@ -62,8 +63,12 @@ const float blurKernalWeights[9]
 void main()
 {
     fragColor = vec4(texture(screenTexture, texCoords).rgb, 1.0);// default post-processing
-    //fragColor = ReinhardToneMapping(fragColor);
-    //fragColor = PostprocessInversion(fragColor);
-    //fragColor = PostprocessGrayscale(fragColor);
-    //fragColor = PostprocessKernal(screenTexture, texCoords, kernalOffset, blurKernalWeights);
+    if (mode == 1)
+        fragColor = ReinhardToneMapping(fragColor);
+    else if (mode == 2)
+        fragColor = PostprocessInversion(fragColor);
+    else if (mode == 3)
+        fragColor = PostprocessGrayscale(fragColor);
+    else if (mode == 4)
+        fragColor = PostprocessKernal(screenTexture, texCoords, kernalOffset, blurKernalWeights);
 }

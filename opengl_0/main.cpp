@@ -60,6 +60,7 @@ int shadowResHeight = 2048;
 
 cckit::BehaviorLamp lampBehavior;
 float heightScale = 0.1f;
+int postprocessMode = 0;
 
 int main() {
 	int iDummy;
@@ -220,6 +221,7 @@ void run(GLFWwindow* _pWindow)
 
 #ifdef POSTPROCESS_ENABLED
 		fboStack.push(fbo);
+		pShaderScreen->set1i("mode", postprocessMode);
 #endif
 
 		glEnable(GL_DEPTH_TEST);
@@ -363,6 +365,11 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLf
 		onDirLightDistChanged(-10 * _deltaTime);
 	else if (glfwGetKey(_pWindow, GLFW_KEY_Y) == GLFW_PRESS)
 		onDirLightDistChanged(10 * _deltaTime);
+
+	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_K)) {
+		++postprocessMode;
+		postprocessMode %= 5;
+	}
 }
 
 void setup_fsConfigs() {
