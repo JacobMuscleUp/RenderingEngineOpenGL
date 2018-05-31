@@ -61,6 +61,7 @@ int shadowResHeight = 2048;
 cckit::BehaviorLamp lampBehavior;
 float heightScale = 0.1f;
 int postprocessMode = 0;
+float timeScale = 1.0f;
 
 int main() {
 	int iDummy;
@@ -105,7 +106,7 @@ GLFWwindow* init_glfw()
 	if (pWindow)
 	{
 		glfwMakeContextCurrent(pWindow);
-		glfwSetInputMode(pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		//glfwSetInputMode(pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	}
 
 	return pWindow;
@@ -134,6 +135,9 @@ void set_callback_glfw(GLFWwindow* _pWindow)
 			, offsetY = lastPosY - posY;
 		lastPosX = posX;
 		lastPosY = posY;
+
+		offsetX *= timeScale;
+		offsetY *= timeScale;
 
 		camera.process_mouse(offsetX, offsetY);
 	});
@@ -215,6 +219,7 @@ void run(GLFWwindow* _pWindow)
 	while (!glfwWindowShouldClose(_pWindow)) {// loop
 		float currentFrameTime = glfwGetTime();
 		deltaTime = currentFrameTime - lastFrameTime;
+		deltaTime *= timeScale;
 		lastFrameTime = currentFrameTime;
 
 		process_keyboard(_pWindow, camera, fboDepthMap, deltaTime);
@@ -369,6 +374,9 @@ void process_keyboard(GLFWwindow* _pWindow, cckit::GLcamera& _camera, cckit::GLf
 	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_K)) {
 		++postprocessMode;
 		postprocessMode %= 5;
+	}
+	if (cckit::glGetKeyDown(_pWindow, GLFW_KEY_J)) {
+		timeScale = 1.0f - timeScale;
 	}
 }
 

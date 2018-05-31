@@ -7,3 +7,5 @@
 3) under the section "Linker/Input",
 	- add "glfw3.lib" and "opengl32.lib" and "assimp-vc140-mt.lib" to the list of Additional Dependencies
 4) add all files inside "solution_name/OpenGL Libraries/src" to the project if they are not currently included or are invalid
+
+![ShadowMapping](Screenshots/ShadowDemo.png)
