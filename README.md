@@ -1,3 +1,6 @@
+This is a rendering/game engine written in C++ and based on OpenGL. You can script the behaviors of game objects in this engine the way
+you do in Unity Engine.
+
 1) navigate to the solution property pages
 2) under the section "VC++ Directories", 
 	- add the path of the directory whose path is currently "solution_name/OpenGL Libraries/include"
