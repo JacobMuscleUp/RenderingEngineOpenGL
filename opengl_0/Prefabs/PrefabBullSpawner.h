@@ -15,7 +15,7 @@ namespace cckit
 
 	std::function<void(BehaviorBullSpawner&)> ConfigPrefabBullSpawner0
 		= [](BehaviorBullSpawner& _behavior) {
-		_behavior.mSpawnTime = 3.0f;
+		_behavior.mSpawnTime = 9.0f;
 	};
 }
 
